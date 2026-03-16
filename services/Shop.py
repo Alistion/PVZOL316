@@ -54,11 +54,12 @@ class ShopService:
             update_user_currencies(username, rmb_delta=-total_cost)
         elif shop_type == 5:
             update_user_currencies(username, honor_delta=-total_cost) # 扣除荣誉
-        elif shop_type in [2, 8]:  
+        elif shop_type in [2, 4, 8]:  
             exchange_id = int(item_config.get("exchange_tool_id", 0))
             if exchange_id > 0:
                 modify_tool_amount(username, exchange_id, -total_cost) # 扣实体道具
             else:
+                logger.error(f"兑换失败：商品 {shop_item_id} 没配置 exchange_tool_id")
                 return False
                 
         # --- 发货逻辑 ---
