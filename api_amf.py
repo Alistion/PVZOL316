@@ -95,7 +95,7 @@ def route_amf_logic(api_name, req_body, current_user):
     elif api_name == "api.duty.getDuty": return None
     elif api_name == "api.vip.rewards": return VipService.get_vip_rewards(current_user)
     elif api_name == "api.message.gets": return []
-
+    elif api_name == "api.active.getState": return 1
 
     # ==========================================
     # 🚧 尚未实现的功能占位符 (根据官方蓝图自动预警)
@@ -151,7 +151,7 @@ def route_amf_logic(api_name, req_body, current_user):
                       "api.guide.getsumtimeact", "api.guide.getsumtimereward", "api.guide.getDailyReward", 
                       "api.guide.getFirstReward", "api.guide.setFirstReward", "api.active.getCopyAllChapters", 
                       "api.active.getAllLevels", "api.active.challenge", "api.active.addCount", 
-                      "api.active.getCopy", "api.active.getState", "api.banner.get", "api.gift.get"]:
+                      "api.active.getCopy", "api.banner.get", "api.gift.get"]:
         return unimplemented_alert(api_name)
 
     # --- 9. 摇钱树打僵尸 (Zombie) ---

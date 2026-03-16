@@ -8,7 +8,7 @@ class VipService:
         return {
             "reward": [
                 {"min_exp": 0, "status": 1},
-                {"min_exp": 2000, "status": -1},
+                {"min_exp": 2000, "status": 1},
                 {"min_exp": 5000, "status": -1},
                 {"min_exp": 10000, "status": -1}
             ],
