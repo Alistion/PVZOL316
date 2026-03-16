@@ -3,24 +3,6 @@ import json
 import time
 from services import ShopService, ActiveService, OpenBoxService, ServerBattleService, DutyService, VipService,StoneInstance,Instance
 
-def get_shop_items():
-    try:
-        with open("shop_config.json", "r", encoding="utf-8") as f:
-            return json.load(f).get("items", [])
-    except Exception as e:
-        print(f"读取商城配置失败: {e}")
-        return []
-    
-def format_shop_item(g):
-    return {
-        "id": str(g.get("id", "")),
-        "p_id": str(g.get("p_id", "")),
-        "type": str(g.get("type", "tool")),
-        "price": str(g.get("price", "")),
-        "num": str(g.get("num", "")),
-        "exchange_tool_id": str(g.get("exchange_tool_id", "0")),
-        "discount": str(g.get("discount", "0"))
-    }
 
 # 【新增】未实现接口的拦截预警器
 def unimplemented_alert(api_name):
@@ -46,13 +28,10 @@ def route_amf_logic(api_name, req_body, current_user):
     
     # --- 商城系统 ---
     elif api_name == "api.shop.init":
-        shop_items = get_shop_items()
-        goods_array = [format_shop_item(item) for item in shop_items if item.get("shop_type") == 3]
-        return {"type_all": {"exchange": 2, "game_coin": 1, "rmb": 3, "hot": 7, "vip": 6}, "money": 10, "time": 86400, "goods": goods_array}
+        return ShopService.get_shop_init()
     elif api_name == "api.shop.getMerchandises":
         shop_type = int(req_body[-1]) if req_body and len(req_body) > 0 else 3
-        shop_items = get_shop_items()
-        return [format_shop_item(item) for item in shop_items if item.get("shop_type") == shop_type]
+        return ShopService.get_merchandises(shop_type)
     elif api_name == "api.shop.buy":
         buy_res = ShopService.buy_item(current_user, int(req_body[0]), int(req_body[1]))
         if buy_res:
@@ -65,6 +44,7 @@ def route_amf_logic(api_name, req_body, current_user):
                 "tool": { "id": int(buy_res["bought_id"]), "amount": int(buy_res["bought_amount"]) }
             }
         return {"status": "error"}
+        
     elif api_name == "api.shop.sell":
         if len(req_body) >= 3: 
             return ShopService.sell_item(current_user, int(req_body[0]), int(req_body[1]), int(req_body[2]))

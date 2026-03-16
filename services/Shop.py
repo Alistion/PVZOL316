@@ -16,7 +16,16 @@ def get_shop_items():
     except Exception as e:
         print(f"读取商城配置失败: {e}")
         return []
-
+def format_shop_item(g):
+    return {
+        "id": str(g.get("id", "")),
+        "p_id": str(g.get("p_id", "")),
+        "type": str(g.get("type", "tool")),
+        "price": str(g.get("price", "")),
+        "num": str(g.get("num", "")),
+        "exchange_tool_id": str(g.get("exchange_tool_id", "0")),
+        "discount": str(g.get("discount", "0"))
+    }
 def get_tool_sell_price(tool_id):
     global _TOOL_PRICE_CACHE
     if _TOOL_PRICE_CACHE is None:
@@ -35,6 +44,17 @@ def get_tool_sell_price(tool_id):
     return _TOOL_PRICE_CACHE.get(tool_id, 0)
 
 class ShopService:
+
+    @staticmethod
+    def get_shop_init():
+        shop_items = get_shop_items()
+        goods_array = [format_shop_item(item) for item in shop_items if item.get("shop_type") == 3]
+        return {"type_all": {"exchange": 2, "game_coin": 1, "rmb": 3, "hot": 7, "vip": 6}, "money": 10, "time": 86400, "goods": goods_array}
+    
+    @staticmethod
+    def get_merchandises(shop_type):
+        shop_items = get_shop_items()
+        return [format_shop_item(item) for item in shop_items if item.get("shop_type") == shop_type]
     @staticmethod
     def buy_item(username, shop_item_id, buy_amount):
         shop_items = get_shop_items()
