@@ -27,7 +27,7 @@ def build_user_xml(username):
     return f"""<?xml version="1.0" encoding="UTF-8"?>
     <root>
         <response><status>success</status></response>
-        <user id="{user['id']}" name="{user['username']}" charm="999" money="{money}" date_award="1" reward_daily="1" has_reward_cus="1" has_reward_once="1" has_reward_sum="1" has_reward_first="1" state="" rmb_money="{rmb}" open_cave_grid="16" wins="999" is_new="0" login_reward="1" invite_amount="0" use_invite_num="0" max_use_invite_num="10" lottery_key="99" banner_num="0" banner_url="/pvz/events/" hasActivitys="1" face_url="" face="/pvz/avatar/1.png" vip_grade="2" vip_etime="1893427200" vip_restore_hp="1" is_auto="0" serverbattle_status="3" IsNewTaskSystem="1" registrationReward="0" stone_cha_count="0" vip_exp="1111" >
+        <user id="{user['id']}" name="{user['username']}" charm="999" money="{money}" date_award="1" reward_daily="1" has_reward_cus="1" has_reward_once="1" has_reward_sum="1" has_reward_first="1" state="" rmb_money="{rmb}" open_cave_grid="16" wins="999" is_new="" login_reward="1" invite_amount="0" use_invite_num="0" max_use_invite_num="10" lottery_key="99" banner_num="0" banner_url="/pvz/events/" hasActivitys="1" face_url="" face="/pvz/avatar/1.png" vip_grade="2" vip_etime="1893427200" vip_restore_hp="1" is_auto="0" serverbattle_status="3" IsNewTaskSystem="1" registrationReward="1" stone_cha_count="0" vip_exp="1111" >
             <arena_rank_date old_start="2026-01-01" old_end="2026-12-31" />
             <tree height="{t_height}" today="1" today_max="1000" />
             <grade id="{level}" exp="99999" exp_min="0" exp_max="100000" today_exp="0" today_exp_max="1000" />

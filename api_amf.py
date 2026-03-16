@@ -1,7 +1,7 @@
 # api_amf.py
 import json
 import time
-from services import ShopService, ActiveService, OpenBoxService, ServerBattleService, DutyService, VipService
+from services import ShopService, ActiveService, OpenBoxService, ServerBattleService, DutyService, VipService,StoneInstance
 
 def get_shop_items():
     try:
@@ -75,7 +75,7 @@ def route_amf_logic(api_name, req_body, current_user):
         use_amount, amf_org_data = OpenBoxService.open_box(current_user, req_body)
         return {"status": "success", "openAmount": use_amount, "prize_money": 8888, "prize_exp": 1000, "tools": [], "organisms": [amf_org_data]}
         
-    # --- 跨服战核心 ---
+    # --- 跨服战系统 ---
     elif api_name == "api.serverbattle.qualifying":
         return ServerBattleService.get_qualifying_info(current_user)
         
@@ -96,6 +96,13 @@ def route_amf_logic(api_name, req_body, current_user):
     elif api_name == "api.vip.rewards": return VipService.get_vip_rewards(current_user)
     elif api_name == "api.message.gets": return []
     elif api_name == "api.active.getState": return 1
+
+    # --- 宝石系统 ---
+    elif api_name == "api.stone.getChapInfo":
+        return StoneInstance.get_chap_info(current_user)
+    elif api_name == "api.zombie.getInfo":
+        return StoneInstance.get_zombie_info(current_user)
+    
 
     # ==========================================
     # 🚧 尚未实现的功能占位符 (根据官方蓝图自动预警)
@@ -155,11 +162,11 @@ def route_amf_logic(api_name, req_body, current_user):
         return unimplemented_alert(api_name)
 
     # --- 9. 摇钱树打僵尸 (Zombie) ---
-    elif api_name in ["api.zombie.getInfo", "api.zombie.beat", "api.zombie.addcount"]:
+    elif api_name in [ "api.zombie.beat", "api.zombie.addcount"]:
         return unimplemented_alert(api_name)
 
     # --- 10. 魔法石副本 (Stone) ---
-    elif api_name in ["api.stone.getChapInfo", "api.stone.getCaveInfo", "api.stone.getRewardInfo", 
+    elif api_name in [ "api.stone.getCaveInfo", "api.stone.getRewardInfo", 
                       "api.stone.reward", "api.stone.getRankByCid", "api.stone.challenge", 
                       "api.stone.addCountByMoney", "api.stone.getCaveThrougInfo"]:
         return unimplemented_alert(api_name)

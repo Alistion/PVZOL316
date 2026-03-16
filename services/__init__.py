@@ -8,3 +8,4 @@ from .GM import GMService
 from .ServerBattle import ServerBattleService
 from .Duty import DutyService
 from .VipService import VipService
+from .Stone import StoneInstance
