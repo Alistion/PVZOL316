@@ -1,7 +1,7 @@
 # api_amf.py
 import json
 import time
-from services import ShopService, ActiveService, OpenBoxService, ServerBattleService, DutyService, VipService,StoneInstance
+from services import ShopService, ActiveService, OpenBoxService, ServerBattleService, DutyService, VipService,StoneInstance,Instance
 
 def get_shop_items():
     try:
@@ -103,6 +103,9 @@ def route_amf_logic(api_name, req_body, current_user):
     elif api_name == "api.zombie.getInfo":
         return StoneInstance.get_zombie_info(current_user)
     
+    # --- 副本系统 (InsideWorld / Fuben) ---
+    elif api_name == "api.fuben.display":
+        return Instance.InstanceService.display(current_user)
 
     # ==========================================
     # 🚧 尚未实现的功能占位符 (根据官方蓝图自动预警)
@@ -123,7 +126,7 @@ def route_amf_logic(api_name, req_body, current_user):
         return unimplemented_alert(api_name)
 
     # --- 4. 副本系统 (InsideWorld / Fuben) ---
-    elif api_name in ["api.fuben.display", "api.fuben.caveInfo", "api.fuben.openCave", "api.fuben.challenge",
+    elif api_name in ["api.fuben.caveInfo", "api.fuben.openCave", "api.fuben.challenge",
                       "api.fuben.addChallengeCount", "api.fuben.addCaveChallengeCount", "api.fuben.top", 
                       "api.fuben.reward", "api.fuben.award"]:
         return unimplemented_alert(api_name)

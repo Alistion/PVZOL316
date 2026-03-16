@@ -27,7 +27,7 @@ class StoneInstance:
                     "4级宝石箱"
                 ]
             })
-            
+        
         # 组装外层的面板数据
         panel_data = {
             "chap_info": chap_info_array,
@@ -57,7 +57,7 @@ class StoneInstance:
                     "dt": 1,
                     "bs": 1,
                     "rd": [
-                        [[1002, 0]],  # 注意这里是极其严格的嵌套数组
+                        [[1002, 0]],  
                         [[1002, 0]]
                     ],
                     "na": "",
