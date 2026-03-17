@@ -7,7 +7,7 @@ from flask import Flask, send_from_directory, request, Response, session, render
 # 引入重构后的模块与服务
 from config import logger, SECRET_KEY, MASTER_KEY_XML
 from dal import init_db, get_all_users, verify_user, register_user,get_or_create_user
-from api_xml import build_user_xml, build_warehouse_xml, handle_tree_fertilize
+from api_xml import build_user_xml, build_warehouse_xml, handle_tree_fertilize,build_recommend_friends_xml
 from api_amf import route_amf_logic
 from services import GMService, AuthService  
 
@@ -58,6 +58,11 @@ def handle_game_requests(current_user, path=""):
     if "Warehouse" in path: return Response(build_warehouse_xml(current_user), content_type='text/xml; charset=utf-8')
     if "tree/addheight" in path: return Response(handle_tree_fertilize(current_user), content_type='text/xml; charset=utf-8')
 
+    if "user/recommendfriend" in path:return Response(build_recommend_friends_xml(current_user), mimetype='text/xml')
+    if "user/addfriend" in path:
+        # 当点击确定添加时，我们暂时直接返回成功（后面可以再完善数据库真正的好友关系表）
+        return Response(MASTER_KEY_XML, mimetype='text/xml')
+    
     paths_to_try = [path, os.path.join('cache', 'youkia', path), os.path.join('cache', 'pvz', path), os.path.join('cache', path)]
     for try_path in paths_to_try:
         if os.path.exists(try_path): return send_from_directory(os.path.dirname(try_path) or '.', os.path.basename(try_path))

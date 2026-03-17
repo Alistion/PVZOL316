@@ -12,3 +12,4 @@ from .Stone import StoneInstance
 from .Instance import InstanceService
 from .Arena import ArenaService  
 from .Auth import AuthService
+from .Friends import FriendService

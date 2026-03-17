@@ -1,7 +1,7 @@
 # api_xml.py
 import json
 from dal import get_or_create_user, get_user_tools, get_user_organisms, get_arena_lineup
-from services import TreeService
+from services import TreeService,FriendService
 
 def build_user_xml(username):
     user = get_or_create_user(username)
@@ -84,3 +84,19 @@ def handle_tree_fertilize(current_user):
         <tree height="{new_height}" times="9999" message="世界之树长高了！获得了丰厚奖励！" />
         <awards><tools><item id="1" amount="8888" /><item id="3008" amount="10" /></tools></awards>
     </data>"""
+
+def build_recommend_friends_xml(username):
+    """构造推荐好友列表 XML"""
+    # 1. 业务逻辑从 Service 获取
+    friends_list = FriendService.get_recommend_list(username)
+    
+    # 2. 仅在这里负责 XML 字符串拼装
+    items_xml = ""
+    for f in friends_list:
+        items_xml += f'<item id="{f["uid"]}" name="{f["name"]}" grade="{f["grade"]}" charm="{f["charm"]}" face="{f["face"]}" vip_grade="{f["vip_grade"]}" vip_etime="{f["vip_etime"]}" />'
+
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+    <root>
+        <response><status>success</status></response>
+        <friends amount="{len(friends_list)}">{items_xml}</friends>
+    </root>"""

@@ -48,9 +48,9 @@ class StoneInstance:
             "helper": 3,
             "level": 1,
             "rate": 999,
-            "can_buy_count": 0,
+            "can_buy_count": 999,
             "probability": 999,
-            "count": 0,
+            "count": 10,
             "max_multiple": 8,
             "zombies": [
                 {
