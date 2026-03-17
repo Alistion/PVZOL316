@@ -20,7 +20,7 @@ def build_user_xml(username):
     t_height = safe_num(user.get('tree_height'), 0)
     honor_val = safe_num(user.get('honor'), 0) 
     
-    # # 【新增】获取真实的功勋值
+    
     # 【新增】从数据库读取玩家的专属头像，如果没找到就兜底用 1.png
     avatar_val = user.get('avatar') or "/pvz/avatar/1.png"
 
