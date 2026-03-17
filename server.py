@@ -60,7 +60,18 @@ def handle_game_requests(current_user, path=""):
 
     if "user/recommendfriend" in path:return Response(build_recommend_friends_xml(current_user), mimetype='text/xml')
     if "user/addfriend" in path:
-        # 当点击确定添加时，我们暂时直接返回成功（后面可以再完善数据库真正的好友关系表）
+        from services import FriendService
+        # 尝试看看 Flash 有没有发具体 UID
+        target_uid = request.values.get('fuid') or request.values.get('id')
+        
+        if target_uid:
+            FriendService.add_friend(current_user, target_uid)
+        else:
+            # 如果没传 UID，说明这是一键添加按钮，把推荐列表里的人全加了！
+            recs = FriendService.get_recommend_list(current_user)
+            for r in recs:
+                FriendService.add_friend(current_user, r['uid'])
+                
         return Response(MASTER_KEY_XML, mimetype='text/xml')
     
     paths_to_try = [path, os.path.join('cache', 'youkia', path), os.path.join('cache', 'pvz', path), os.path.join('cache', path)]
@@ -154,13 +165,55 @@ def game():
     host_url = request.host_url
     custom_base = f"{host_url}u/{uid}/"
     
-    return f"""<!DOCTYPE html><html><body style="background:#222; text-align:center; color:#eee; font-family:sans-serif; margin:0; padding-top:20px;">
-    <div style="margin-bottom:10px;">欢迎，<b style="color:#76b900;">{username} </b> &nbsp;&nbsp;|&nbsp;&nbsp; <a href="/logout" style="color:#ff4444;text-decoration:none;font-weight:bold;">🚪 退出登录</a></div>
-    <embed src="/main.swf" width="760" height="600" type="application/x-shockwave-flash" allowscriptaccess="always" flashvars="base_url={custom_base}&base_url_info={custom_base}"></body></html>"""
+    return f"""<!DOCTYPE html><html>
+    <head>
+        <title>植物大战僵尸Online - 私服</title>
+        <script>
+            // 【核心劫持魔法】埋伏在这里，专门等 Flash 来调用！
+            function gotoFriendPage() {{
+                // 1. 拦截指令，弹出私服专属的 UID 输入框
+                var targetUid = prompt("👑 \\n请输入你想添加的好友 UID（例如：100002）：");
+                
+                // 2. 如果玩家输入了 UID 并点击确定
+                if (targetUid) {{
+                    // 3. 悄悄发送 Ajax 请求给 Python 后端，强制执行双向添加
+                    fetch('/api/gm_force_add_friend?target=' + targetUid)
+                    .then(response => response.text())
+                    .then(text => {{
+                        if(text === "OK") {{
+                            alert("✅ 添加成功！\\n请刷新游戏网页！");
+                        }} else {{
+                            alert("❌ 添加失败：" + text);
+                        }}
+                    }});
+                }}
+            }}
+        </script>
+    </head>
+    <body style="background:#222; text-align:center; color:#eee; font-family:sans-serif; margin:0; padding-top:20px;">
+        <div style="margin-bottom:10px;">欢迎，<b style="color:#76b900;">{username} (UID: {uid})</b> &nbsp;&nbsp;|&nbsp;&nbsp; <a href="/logout" style="color:#ff4444;text-decoration:none;font-weight:bold;">🚪 退出登录</a></div>
+        <embed src="/main.swf" width="760" height="600" type="application/x-shockwave-flash" allowscriptaccess="always" flashvars="base_url={custom_base}&base_url_info={custom_base}">
+    </body></html>"""
 @app.route('/logout')
 def logout():
     session.pop('username', None) 
     return redirect('/')
+
+@app.route('/api/gm_force_add_friend', methods=['GET', 'POST'])
+def gm_force_add_friend():
+    username = session.get('username')
+    target_uid = request.values.get('target')
+    
+    if not username:
+        return "未注册", 403
+    if not target_uid or not target_uid.isdigit():
+        return "无效的 UID", 400
+        
+    from services import FriendService
+    # 调用我们之前在 dal/friend.py 里的双向奔赴逻辑
+    FriendService.add_friend(username, target_uid)
+    
+    return "OK", 200
 
 @app.route('/<path:path>', methods=['GET', 'POST', 'OPTIONS'])
 def catch_all(path=""):

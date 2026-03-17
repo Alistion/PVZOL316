@@ -1,5 +1,5 @@
 # services/Friends.py
-from dal import get_all_users
+from dal import get_all_users,add_friend_to_db, get_friend_details
 
 class FriendService:
     @staticmethod
@@ -29,8 +29,23 @@ class FriendService:
                 break
             
         return recommend_data
-
+    @staticmethod
+    def get_my_friends(current_username):
+        """获取我的真实好友列表 (供游戏主界面渲染)"""
+        friends_data = get_friend_details(current_username)
+        res = []
+        for f in friends_data:
+            res.append({
+                "uid": f['id'] + 100000, "name": f['username'],
+                "grade": f.get('level', 100), "face": f.get('avatar', "/pvz/avatar/1.png"),
+                "charm": 888, "vip_grade": 1, "vip_etime": 2000000000
+            })
+        return res
     @staticmethod
     def add_friend(current_username, target_uid):
-        # 暂时保持简单成功返回
-        return True
+        """执行添加好友动作"""
+        if target_uid:
+            add_friend_to_db(current_username, int(target_uid))
+            print(f"[好友系统] {current_username} 成功添加了 UID: {target_uid} 为好友！")
+    
+    

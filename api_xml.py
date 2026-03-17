@@ -23,8 +23,12 @@ def build_user_xml(username):
     
     # 【新增】从数据库读取玩家的专属头像，如果没找到就兜底用 1.png
     avatar_val = user.get('avatar') or "/pvz/avatar/1.png"
+    my_friends = FriendService.get_my_friends(username)
+    friends_xml_str = ""
+    for f in my_friends:
+        friends_xml_str += f'<item id="{f["uid"]}" name="{f["name"]}" grade="{f["grade"]}" charm="{f["charm"]}" face="{f["face"]}" vip_grade="{f["vip_grade"]}" vip_etime="{f["vip_etime"]}" />'
+    friends_tag = f'<friends amount="{len(my_friends)}" page_count="1" current="1" page_size="10">{friends_xml_str}</friends>'
 
-    # 【关键修复】在 <user> 标签的末尾，加上 merit="{merit_val}" meritorious="{merit_val}"
     return f"""<?xml version="1.0" encoding="UTF-8"?>
     <root>
         <response><status>success</status></response>
@@ -38,7 +42,7 @@ def build_user_xml(username):
             <fuben fuben_lcc="5" />
             <copy_active state="1" />
             <copy_zombie state="0" />
-            <friends amount="0" page_count="1" current="1" page_size="10" />
+            {friends_tag}
         </user>
     </root>"""
 

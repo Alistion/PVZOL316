@@ -21,7 +21,10 @@ def init_db():
             conn.execute('''CREATE TABLE IF NOT EXISTS user_organisms (
                 id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, pid INTEGER, data TEXT
             )''')
-            
+            conn.execute('''CREATE TABLE IF NOT EXISTS user_friends (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, friend_uid INTEGER
+            )''')
+
             try:
                 conn.execute('ALTER TABLE users ADD COLUMN tree_height INTEGER DEFAULT 0')
                 conn.execute('ALTER TABLE users ADD COLUMN tree_times INTEGER DEFAULT 9999')

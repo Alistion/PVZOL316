@@ -12,3 +12,4 @@ from .user import (
 from .item import get_user_tools, modify_tool_amount
 from .plant import get_user_organisms, add_organism, clear_organisms
 from .arena import update_arena_lineup, get_arena_lineup
+from .friend import add_friend_to_db, get_friend_details
