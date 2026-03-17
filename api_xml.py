@@ -1,6 +1,6 @@
 # api_xml.py
 import json
-from dal import get_or_create_user, get_user_tools, get_user_organisms
+from dal import get_or_create_user, get_user_tools, get_user_organisms, get_arena_lineup
 from services import TreeService
 
 def build_user_xml(username):
@@ -63,13 +63,15 @@ def build_warehouse_xml(username):
             </item>'''
         except Exception: pass
 
+    arena_ids_str = get_arena_lineup(username)
+
     return f"""<?xml version="1.0" encoding="UTF-8"?>
     <root>
         <response><status>success</status></response>
         <warehouse tool_grid_amount="200" organism_grid_amount="200">
             <open_info><organism grade="10" money="1000" /><tool grade="10" money="1000" /></open_info>
             <tools>{tools_xml}</tools>
-            <organisms>{orgs_xml}<organisms_arena ids="" /><organisms_territory ids="-1,-1,-1,-1,-1" /><organisms_serverbattle ids="" /></organisms>
+            <organisms>{orgs_xml}<organisms_arena ids="{arena_ids_str}" /><organisms_territory ids="-1,-1,-1,-1,-1" /><organisms_serverbattle ids="" /></organisms>
         </warehouse>
     </root>"""
 

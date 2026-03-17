@@ -2,7 +2,7 @@
 import json
 import time
 from services import ShopService, ActiveService, OpenBoxService, ServerBattleService, DutyService, VipService,StoneInstance,Instance
-
+from services import ArenaService
 
 # 【新增】未实现接口的拦截预警器
 def unimplemented_alert(api_name):
@@ -86,14 +86,22 @@ def route_amf_logic(api_name, req_body, current_user):
     # --- 副本系统 (InsideWorld / Fuben) ---
     elif api_name == "api.fuben.display":
         return Instance.InstanceService.display(current_user)
+    
+    # --- 斗技场系统 (Arena) ---
+    elif api_name == "api.arena.getArenaList":
+        return ArenaService.get_arena_list(current_user)
+    
+    elif api_name == "api.arena.setOrganism":
+        return ArenaService.set_organism(current_user, req_body)
+
 
     # ==========================================
     # 🚧 尚未实现的功能占位符 (根据官方蓝图自动预警)
     # ==========================================
 
     # --- 1. 斗技场系统 (Arena) ---
-    elif api_name in ["api.arena.awardWeek", "api.arena.getArenaList", "api.arena.getRankListOld", 
-                      "api.arena.getAwardWeekInfo", "api.arena.getRankList", "api.arena.setOrganism", "api.arena.challenge"]:
+    elif api_name in ["api.arena.awardWeek",  "api.arena.getRankListOld", 
+                      "api.arena.getAwardWeekInfo", "api.arena.getRankList", "api.arena.challenge"]:
         return unimplemented_alert(api_name)
 
     # --- 2. 花园系统 (Garden) ---

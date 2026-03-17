@@ -36,6 +36,10 @@ def init_db():
                 conn.execute('ALTER TABLE users ADD COLUMN gift_ticket INTEGER DEFAULT 0')
             except sqlite3.OperationalError: pass
 
+            try:
+                conn.execute('ALTER TABLE users ADD COLUMN arena_lineup TEXT DEFAULT ""')
+            except sqlite3.OperationalError: pass
+
         logger.info("数据库初始化完成，表结构已就绪。")
     except Exception as e:
         logger.error(f"数据库初始化失败: {e}")
@@ -118,3 +122,15 @@ def clear_organisms(username):
         conn.execute('DELETE FROM user_organisms WHERE username=?', (username,))
         conn.commit()
 
+# ================= 斗技场阵容 =================
+def update_arena_lineup(username, lineup_str):
+    with get_connection() as conn:
+        conn.execute('UPDATE users SET arena_lineup = ? WHERE username = ?', (lineup_str, username))
+        conn.commit()
+
+def get_arena_lineup(username):
+    with get_connection() as conn:
+        row = conn.execute('SELECT arena_lineup FROM users WHERE username = ?', (username,)).fetchone()
+        if row and row['arena_lineup']:
+            return row['arena_lineup']
+        return ""
