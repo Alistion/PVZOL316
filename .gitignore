@@ -26,3 +26,5 @@ ziliao/
 
 services_back.py
 
+# 忽略 ffdec
+ffdec.exe.lnk

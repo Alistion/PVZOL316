@@ -2,6 +2,7 @@
 import sqlite3
 import json
 from config import logger, DB_FILE, DEFAULT_MONEY, DEFAULT_RMB, DEFAULT_LEVEL
+from werkzeug.security import generate_password_hash, check_password_hash
 '''数据库管理'''
 def get_connection():
     conn = sqlite3.connect(DB_FILE)
@@ -38,6 +39,13 @@ def init_db():
 
             try:
                 conn.execute('ALTER TABLE users ADD COLUMN arena_lineup TEXT DEFAULT ""')
+            except sqlite3.OperationalError: pass
+            try:
+                conn.execute('ALTER TABLE users ADD COLUMN password TEXT DEFAULT ""')
+            except sqlite3.OperationalError: pass
+
+            try:
+                conn.execute('ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT "/pvz/avatar/1.png"')
             except sqlite3.OperationalError: pass
 
         logger.info("数据库初始化完成，表结构已就绪。")
@@ -87,6 +95,46 @@ def reset_tree_gm(username):
     with get_connection() as conn:
         conn.execute('UPDATE users SET tree_height=0, tree_times=9999 WHERE username=?', (username,))
         conn.commit()
+
+# ================= 账号验证系统 =================
+def register_user(username, password, avatar_url="/pvz/avatar/1.png"):
+    with get_connection() as conn:
+        # 检查账号是否被注册过
+        existing = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        if existing:
+            return False, "账号已被占用，请尝试其他账号或直接登录！"
+        
+        # 加密密码并连同头像一起写入数据库
+        from werkzeug.security import generate_password_hash
+        hashed_pw = generate_password_hash(password)
+        conn.execute('INSERT INTO users (username, password, avatar) VALUES (?, ?, ?)', (username, hashed_pw, avatar_url))
+        conn.commit()
+        return True, "注册成功！请点击登录进入游戏。"
+
+def verify_user(username, password):
+    with get_connection() as conn:
+        row = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        if not row:
+            return False, "该账号不存在，请先注册！"
+        
+        # 【核心修复】：将 sqlite3.Row 对象转换成真正的 Python 字典！
+        user = dict(row)
+        
+        db_password = user.get('password', '')
+        # 兼容老玩家逻辑：如果这是之前的免密老账号，第一次登录时自动绑定当前输入的密码
+        if not db_password:
+            from werkzeug.security import generate_password_hash
+            hashed_pw = generate_password_hash(password)
+            conn.execute('UPDATE users SET password = ? WHERE username = ?', (hashed_pw, username))
+            conn.commit()
+            return True, "老玩家回归！已自动为您绑定此新密码。"
+            
+        # 校验密码哈希值
+        from werkzeug.security import check_password_hash
+        if check_password_hash(db_password, password):
+            return True, "登录成功！"
+        else:
+            return False, "密码错误，请重试！"
 
 # ================= 道具系统 =================
 def get_user_tools(username):
