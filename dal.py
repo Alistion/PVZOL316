@@ -1,6 +1,7 @@
 # dal.py
 import sqlite3
 import json
+import os  # <--- 新增这一行用于删除文件
 from config import logger, DB_FILE, DEFAULT_MONEY, DEFAULT_RMB, DEFAULT_LEVEL
 from werkzeug.security import generate_password_hash, check_password_hash
 '''数据库管理'''
@@ -57,6 +58,80 @@ def get_all_users():
     with get_connection() as conn:
         return [dict(row) for row in conn.execute('SELECT * FROM users').fetchall()]
 
+def delete_user(username):
+    """危险操作：彻底删除玩家及其所有关联数据，并清理本地头像缓存"""
+    with get_connection() as conn:
+        # 1. 查找头像路径并删除物理文件
+        user = conn.execute('SELECT avatar FROM users WHERE username = ?', (username,)).fetchone()
+        if user and user['avatar']:
+            avatar_path = user['avatar']
+            if avatar_path != "/pvz/avatar/1.png":
+                # 跨平台路径拼接: "/pvz/avatar/100001.png" -> cache/pvz/avatar/100001.png
+                parts = avatar_path.strip('/').split('/')
+                file_to_delete = os.path.join('cache', *parts)
+                if os.path.exists(file_to_delete):
+                    try:
+                        os.remove(file_to_delete)
+                        logger.info(f"[系统] 已清理玩家 {username} 的本地头像文件: {file_to_delete}")
+                    except Exception as e:
+                        logger.error(f"[系统] 删除头像文件失败: {e}")
+
+        # 2. 删除数据库关联数据
+        conn.execute('DELETE FROM users WHERE username = ?', (username,))
+        conn.execute('DELETE FROM user_tools WHERE username = ?', (username,))
+        conn.execute('DELETE FROM user_organisms WHERE username = ?', (username,))
+        conn.commit()
+        logger.info(f"[系统] 玩家 {username} 的账号及所有数据已被彻底物理删除！")
+
+def clone_user_data(source_username, target_username):
+    """账号克隆大法：将源账号的货币、物品、植物完美复制给目标账号"""
+    with get_connection() as conn:
+        src_user_row = conn.execute('SELECT * FROM users WHERE username=?', (source_username,)).fetchone()
+        if not src_user_row: return
+        src_user = dict(src_user_row)
+        
+        # 1. 覆盖货币、等级
+        try:
+            conn.execute('''UPDATE users 
+                            SET money=?, rmb_money=?, level=?, honor=?, merit=?, gift_ticket=?
+                            WHERE username=?''', 
+                         (src_user.get('money',0), src_user.get('rmb_money',0), src_user.get('level',100), 
+                          src_user.get('honor',0), src_user.get('merit',0), src_user.get('gift_ticket',0), 
+                          target_username))
+        except sqlite3.OperationalError:
+            conn.execute('UPDATE users SET money=?, rmb_money=?, level=? WHERE username=?', 
+                         (src_user.get('money',0), src_user.get('rmb_money',0), src_user.get('level',100), target_username))
+        
+        # 2. 先清空目标账号原有的物品和植物 (防止重复堆叠)
+        conn.execute('DELETE FROM user_tools WHERE username=?', (target_username,))
+        conn.execute('DELETE FROM user_organisms WHERE username=?', (target_username,))
+        
+        # 3. 复制背包物品
+        src_tools = conn.execute('SELECT tool_id, amount FROM user_tools WHERE username=?', (source_username,)).fetchall()
+        for t in src_tools:
+            conn.execute('INSERT INTO user_tools (username, tool_id, amount) VALUES (?, ?, ?)', (target_username, t['tool_id'], t['amount']))
+        
+        # 4. 复制植物 (连带等级、资质、技能数据原封不动复制)
+        src_orgs = conn.execute('SELECT pid, data FROM user_organisms WHERE username=?', (source_username,)).fetchall()
+        for o in src_orgs:
+            conn.execute('INSERT INTO user_organisms (username, pid, data) VALUES (?, ?, ?)', (target_username, o['pid'], o['data']))
+            
+        conn.commit()
+        
+        logger.info(f"[系统] 已成功将玩家 {source_username} 的所有数据克隆给 {target_username}！")
+def get_username_by_uid(uid):
+    """通过 6 位数字 UID 逆向查找玩家账号名"""
+    try:
+        # 减去 100000 的偏移量，还原出数据库里的真实 ID
+        db_id = int(uid) - 100000 
+        with get_connection() as conn:
+            row = conn.execute('SELECT username FROM users WHERE id = ?', (db_id,)).fetchone()
+            if row:
+                return row['username']
+    except Exception as e:
+        logger.error(f"UID 解析失败: {e}")
+    return None
+
 def get_or_create_user(username):
     with get_connection() as conn:
         user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
@@ -97,19 +172,27 @@ def reset_tree_gm(username):
         conn.commit()
 
 # ================= 账号验证系统 =================
-def register_user(username, password, avatar_url="/pvz/avatar/1.png"):
+def register_user(username, password):
     with get_connection() as conn:
-        # 检查账号是否被注册过
         existing = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
         if existing:
-            return False, "账号已被占用，请尝试其他账号或直接登录！"
+            return False, "账号已被占用，请尝试其他账号或直接登录！", None
         
-        # 加密密码并连同头像一起写入数据库
         from werkzeug.security import generate_password_hash
         hashed_pw = generate_password_hash(password)
-        conn.execute('INSERT INTO users (username, password, avatar) VALUES (?, ?, ?)', (username, hashed_pw, avatar_url))
+        # 写入数据库，暂时分配默认头像 1.png
+        cursor = conn.execute('INSERT INTO users (username, password, avatar) VALUES (?, ?, "/pvz/avatar/1.png")', (username, hashed_pw))
+        # 核心：立刻获取刚刚插入的数据库主键 ID，并计算出 UID
+        uid = cursor.lastrowid + 100000
         conn.commit()
-        return True, "注册成功！请点击登录进入游戏。"
+        return True, "注册成功！请点击登录进入游戏。", uid
+    
+def update_avatar(uid, avatar_url):
+    """注册成功后，单独更新头像的路径"""
+    db_id = uid - 100000
+    with get_connection() as conn:
+        conn.execute('UPDATE users SET avatar = ? WHERE id = ?', (avatar_url, db_id))
+        conn.commit()
 
 def verify_user(username, password):
     with get_connection() as conn:
