@@ -62,8 +62,11 @@ def route_amf_logic(api_name, req_body, current_user):
     # --- 植物/技能系统 ---
     elif api_name == "api.apiorganism.getEvolutionCost":
         return OrganismService.get_evolution_cost(current_user, req_body)
+    elif api_name == "api.apiorganism.refreshHp":
+        return OrganismService.refresh_hp(current_user, req_body)
     
     elif api_name == "api.apiorganism.getEvolutionOrgs": return None
+
     elif api_name == "api.apiskill.getAllSkills":
         try:
             with open("skills.json", "r", encoding="utf-8") as f: return json.load(f)
@@ -123,7 +126,7 @@ def route_amf_logic(api_name, req_body, current_user):
         return unimplemented_alert(api_name)
 
     # --- 5. 植物强化与合成 (Organism / Tool) ---
-    elif api_name in ["api.tool.synthesis", "api.apiorganism.refreshHp", "api.apiorganism.matureRecompute", 
+    elif api_name in ["api.tool.synthesis", "api.apiorganism.matureRecompute", 
                       "api.apiorganism.qualityUp", "api.apiorganism.quality12Up", "api.apiorganism.skillLearn", 
                       "api.apiorganism.skillUp", "api.apiorganism.activities", "api.apiorganism.getEvolutionCost",
                       "api.apiorganism.upgradeTalent", "api.apiorganism.restTalent", "api.apiorganism.strengthen",

@@ -1,6 +1,7 @@
 # services/GM.py
 from dal import update_user_currencies, modify_tool_amount, update_tree_height, clear_organisms, get_all_users, update_user_gm, reset_tree_gm, delete_user, clone_user_data
 from config import logger
+from dal import get_username_by_uid
 
 class GMService:
     @staticmethod
@@ -167,7 +168,7 @@ class GMService:
         
         # 【新增】拦截账号克隆逻辑
         if action == 'clone_user':
-            from dal import get_username_by_uid
+            
             try:
                 src_uid = int(form.get('source_uid', 0))
                 tgt_uid = int(form.get('target_uid', 0))
@@ -184,7 +185,7 @@ class GMService:
         uid_str = form.get('uid')
         if not uid_str: return
         
-        from dal import get_username_by_uid
+        
         try: uid = int(uid_str)
         except ValueError: return
             

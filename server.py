@@ -6,10 +6,11 @@ from flask import Flask, send_from_directory, request, Response, session, render
 
 # 引入重构后的模块与服务
 from config import logger, SECRET_KEY, MASTER_KEY_XML
-from dal import init_db, get_all_users, verify_user, register_user,get_or_create_user
+from dal import init_db, get_all_users, verify_user, register_user,get_or_create_user,get_username_by_uid, update_avatar
+
 from api_xml import build_user_xml, build_warehouse_xml, handle_tree_fertilize,build_recommend_friends_xml
 from api_amf import route_amf_logic
-from services import GMService, AuthService, OrganismService
+from services import GMService, AuthService, OrganismService,FriendService
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -77,7 +78,7 @@ def handle_game_requests(current_user, path=""):
             return Response("<root><response><status>error</status></response></root>", mimetype='text/xml')
     if "user/recommendfriend" in path:return Response(build_recommend_friends_xml(current_user), mimetype='text/xml')
     if "user/addfriend" in path:
-        from services import FriendService
+        
         # 尝试看看 Flash 有没有发具体 UID
         target_uid = request.values.get('fuid') or request.values.get('id')
         
@@ -104,14 +105,14 @@ def handle_game_requests(current_user, path=""):
 # ================= 动态玩家专属路由 (使用 UID) =================
 @app.route('/u/<int:uid>/', methods=['GET', 'POST', 'OPTIONS'])
 def user_root(uid):
-    from dal import get_username_by_uid
+    
     # 解析出真实账号，如果乱输 UID 找不到
     username = get_username_by_uid(uid)
     return handle_game_requests(username, "")
 
 @app.route('/u/<int:uid>/<path:path>', methods=['GET', 'POST', 'OPTIONS'])
 def user_catch_all(uid, path):
-    from dal import get_username_by_uid
+    
     username = get_username_by_uid(uid)
     return handle_game_requests(username, path)
 
@@ -130,7 +131,7 @@ def index():
             if success:
                 session['username'] = username
                 # 登录成功后，立刻获取数据库 ID 并生成 6 位 UID！
-                from dal import get_or_create_user
+                
                 user_data = get_or_create_user(username)
                 session['uid'] = user_data['id'] + 100000
                 return redirect('/game')
@@ -155,7 +156,7 @@ def register():
                 return render_template_string(AuthService.get_register_html("账号和密码不能为空！", False))
             
             # 【流程调整】先在数据库注册生成账号，拿到 UID
-            from dal import register_user, update_avatar
+            
             success, msg, uid = register_user(username, password)
             
             if success:
@@ -229,7 +230,7 @@ def gm_force_add_friend():
     if not target_uid or not target_uid.isdigit():
         return "无效的 UID", 400
         
-    from services import FriendService
+    
     # 调用我们之前在 dal/friend.py 里的双向奔赴逻辑
     FriendService.add_friend(username, target_uid)
     

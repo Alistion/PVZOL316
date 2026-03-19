@@ -1,10 +1,9 @@
-from dal import get_or_create_user
+from dal import get_or_create_user,get_user_tools
 
 
 class ServerBattleService:
     @staticmethod
     def get_qualifying_info(username):
-        from dal import get_user_tools
         
         # 查玩家背包里，真实道具 850 的数量
         tools = get_user_tools(username)

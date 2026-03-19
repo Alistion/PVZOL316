@@ -2,6 +2,7 @@
 import json
 from dal.core import get_connection
 
+
 class OrganismService:
     @staticmethod
     def get_evolution_cost(username, req_body):
@@ -25,7 +26,7 @@ class OrganismService:
             return '<?xml version="1.0" encoding="UTF-8"?><root><response><status>error</status></response></root>'
 
         with get_connection() as conn:
-            # 1. 顺便获取一下玩家的金币和金券 (使用真实的字段名 rmb_money)
+            # 1. 顺便获取一下玩家的金币和金券 
             user_row = conn.execute('SELECT money, rmb_money FROM users WHERE username = ?', (username,)).fetchone()
             
             # 获取金币和金券，如果没有查到给个默认值
@@ -80,3 +81,51 @@ class OrganismService:
                 return xml_response.strip()
 
         return '<?xml version="1.0" encoding="UTF-8"?><root><response><status>error</status></response></root>'
+    
+    @staticmethod
+    def refresh_hp(username, req_body):
+        """
+        植物使用道具回血功能
+        req_body: [操作类型(ORG_HP_x), 植物ID, 道具ID]
+        """
+        print(f"\n[植物回血] {username} 请求回血, 参数: {req_body}")
+        
+        if not req_body or len(req_body) < 2:
+            return 0
+            
+        
+        org_db_id = req_body[0]    # 植物的数据库 ID
+        tool_id = req_body[1]      # 药水的道具 ID
+        
+        
+        
+        with get_connection() as conn:
+            # 1. 扣除数据库里的药水 
+            tool_row = conn.execute('SELECT amount FROM user_tools WHERE username = ? AND tool_id = ?', (username, tool_id)).fetchone()
+            if not tool_row or tool_row['amount'] <= 0:
+                print(f"[植物回血] 失败：道具 {tool_id} 数量不足！")
+                return 0
+                
+            new_amount = tool_row['amount'] - 1
+            if new_amount > 0:
+                conn.execute('UPDATE user_tools SET amount = ? WHERE username = ? AND tool_id = ?', (new_amount, username, tool_id))
+            else:
+                conn.execute('DELETE FROM user_tools WHERE username = ? AND tool_id = ?', (username, tool_id))
+                
+            # 2. 给植物加满血！
+            org_row = conn.execute('SELECT data FROM user_organisms WHERE username = ? AND id = ?', (username, org_db_id)).fetchone()
+            if org_row:
+                org_data = json.loads(org_row['data'])
+                max_hp = org_data.get('hp_max', 999999) # 读取该植物的血量上限
+                
+                org_data['hp'] = max_hp  # 直接加满
+                
+                conn.execute('UPDATE user_organisms SET data = ? WHERE username = ? AND id = ?', (json.dumps(org_data), username, org_db_id))
+                conn.commit()
+                
+                print(f"[植物回血] 成功！消耗药水 {tool_id}，植物 {org_db_id} 血量已回满({max_hp})！")
+                
+                # 3. 最关键的一步：直接返回数字，迎合 _loc7_.setHp(param2.toString())
+                return max_hp
+                
+        return 0

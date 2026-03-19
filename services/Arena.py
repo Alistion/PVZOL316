@@ -46,7 +46,6 @@ class ArenaService:
     def get_arena_list(username):
         """获取斗技场对手列表面板数据 (消除断层，绝对连续排名版)"""
         
-        from dal import get_arena_lineup, get_all_users
         
         # 1. 组装自己的防守植物 ID 数组
         lineup_str = get_arena_lineup(username)
@@ -143,7 +142,7 @@ class ArenaService:
 
         # 核心：将 [2, 1, 4, 3] 转换为字符串 "2,1,4,3" 并存入 SQLite 数据库！
         lineup_str = ",".join(map(str, org_list))
-        from dal import update_arena_lineup
+        
         update_arena_lineup(username, lineup_str)
         
         print(f"\n[斗技场] {username} 防守阵容已永久保存入库！阵容: {lineup_str}")

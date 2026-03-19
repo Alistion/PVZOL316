@@ -1,7 +1,7 @@
 # services/shop.py
 import os
 import xml.etree.ElementTree as ET
-from dal import update_user_currencies, modify_tool_amount, get_connection,get_or_create_user
+from dal import update_user_currencies, modify_tool_amount, get_connection,get_or_create_user, get_user_tools
 from config import logger
 import json
 # ================= 价格内存缓存 =================
@@ -87,7 +87,7 @@ class ShopService:
         logger.info(f"[商城] {username} 购买 {real_tool_id} x{buy_amount}")
         
         # --- 组装对账清单 ---
-        from dal import get_or_create_user, get_user_tools
+        
         user_data = get_or_create_user(username)
         user_tools = get_user_tools(username)
         

@@ -1,7 +1,7 @@
 # services/active.py
 import time
 import datetime
-
+from dal import update_user_currencies, modify_tool_amount
 class ActiveService:
     @staticmethod
     def get_sign_info(username):
@@ -85,7 +85,7 @@ class ActiveService:
     @staticmethod
     def process_sign_in(username):
         # 签到加钱逻辑
-        from dal import update_user_currencies, modify_tool_amount
+        
         update_user_currencies(username, money_delta=888)
         modify_tool_amount(username, tool_id=3008, amount_delta=1)
         return {"id": 1, "amount": 888}, {"id": 3008, "amount": 1}
