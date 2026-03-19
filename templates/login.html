@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>登录 - PvZ</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #fff;
+            padding: 30px 40px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 300px;
+        }
+        fieldset { border: none; padding: 0; margin: 0; text-align: left; }
+        legend { font-size: 24px; font-weight: bold; margin-bottom: 20px; text-align: center; width: 100%; }
+        label { display: block; margin-top: 10px; margin-bottom: 5px; color: #333; }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover { background: #0056b3; }
+        .msg-success { color: green; margin-bottom: 10px; font-weight: bold; }
+        .msg-error   { color: red;   margin-bottom: 10px; font-weight: bold; }
+        h4 a { color: #007bff; text-decoration: none; font-weight: normal; }
+        h4 a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form name="f" action="/" method="post">
+            <input type="hidden" name="action" value="login">
+            <fieldset>
+                <legend>请登录</legend>
+
+                {% if msg %}
+                    <div class="{{ 'msg-success' if is_success else 'msg-error' }}">{{ msg }}</div>
+                {% endif %}
+
+                <label for="username">账号</label>
+                <input type="text" name="username" required />
+
+                <label for="password">密码</label>
+                <input type="password" name="password" required />
+
+                <div class="form-actions">
+                    <button type="submit" class="btn">登录</button>
+                </div>
+            </fieldset>
+        </form>
+        <div style="margin-top: 20px;">
+            <h4><a href="/register">新用户注册</a></h4>
+            <h4><a href="/gm" target="_blank">GM 控制台</a></h4>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>用户注册 - PvZ</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f4f4f4;
+            padding-top: 40px;
+        }
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        h1 { font-size: 20px; color: #333; text-align: center; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .btn-primary:hover { background: #0056b3; }
+        .btn-success {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-success:hover { background: #218838; }
+        .text-center { text-align: center; }
+        .msg-success { color: green; font-weight: bold; }
+        .msg-error   { color: red;   font-weight: bold; }
+        h4 a { color: #007bff; text-decoration: none; }
+        h4 a:hover { text-decoration: underline; }
+        #imageToCrop { display: block; max-width: 100%; }
+        #cropperContainer {
+            display: none;
+            margin-bottom: 15px;
+            text-align: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .cropper-wrap {
+            max-height: 300px;
+            overflow: hidden;
+            margin-bottom: 10px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        #previewContainer {
+            display: none;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        #previewContainer p { font-size: 12px; color: #28a745; font-weight: bold; }
+        #croppedPreview {
+            border: 2px solid #28a745;
+            border-radius: 4px;
+            width: 128px;
+            height: 128px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>用户注册 - 请勿填写真实隐私！</h1>
+
+        {% if msg %}
+            <div class="text-center">
+                <div class="{{ 'msg-success' if is_success else 'msg-error' }}">{{ msg }}</div>
+            </div>
+        {% endif %}
+
+        <form action="/register" method="post" enctype="multipart/form-data" id="regForm">
+            <input type="hidden" name="action" value="register">
+
+            <div>
+                <label>用户名（2-10字符）</label>
+                <input class="form-control" type="text" minlength="2" maxlength="10" name="username" required />
+            </div>
+
+            <div>
+                <label>密码（6-32字符）</label>
+                <input class="form-control" type="password" minlength="6" maxlength="32" name="password" required />
+            </div>
+
+            <div>
+                <label>🖼️ 专属头像（可选，支持任意尺寸）</label>
+                <input type="file" name="avatar" id="avatarInput"
+                       accept="image/png, image/jpeg, image/jpg"
+                       style="padding:0; border:none; margin-top:5px; margin-bottom:15px; font-size:14px; width:100%;">
+            </div>
+
+            <div id="cropperContainer">
+                <div class="cropper-wrap">
+                    <img id="imageToCrop" src="">
+                </div>
+                <button type="button" id="cropButton" class="btn-success">✂️ 确认裁剪并预览</button>
+            </div>
+
+            <div id="previewContainer">
+                <p>已成功裁剪为 256×256：</p>
+                <img id="croppedPreview" src="">
+            </div>
+
+            <div>
+                <button type="submit" class="btn-primary" id="submitBtn">注册</button>
+            </div>
+        </form>
+
+        <div class="text-center" style="margin-top: 20px;">
+            <h4><a href="/">返回主界面</a></h4>
+        </div>
+    </div>
+
+    <script>
+        let cropper = null;
+        const avatarInput      = document.getElementById('avatarInput');
+        const imageToCrop      = document.getElementById('imageToCrop');
+        const cropperContainer = document.getElementById('cropperContainer');
+        const previewContainer = document.getElementById('previewContainer');
+        const croppedPreview   = document.getElementById('croppedPreview');
+        const cropButton       = document.getElementById('cropButton');
+
+        avatarInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            imageToCrop.src = URL.createObjectURL(file);
+            cropperContainer.style.display = 'block';
+            previewContainer.style.display = 'none';
+
+            if (cropper) cropper.destroy();
+            imageToCrop.onload = function () {
+                cropper = new Cropper(imageToCrop, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    autoCropArea: 0.8,
+                });
+            };
+        });
+
+        cropButton.addEventListener('click', function () {
+            if (!cropper) return;
+            const canvas = cropper.getCroppedCanvas({
+                width: 256,
+                height: 256,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            });
+            croppedPreview.src = canvas.toDataURL('image/png');
+            previewContainer.style.display = 'block';
+            cropperContainer.style.display = 'none';
+
+            canvas.toBlob(function (blob) {
+                const dt = new DataTransfer();
+                dt.items.add(new File([blob], 'avatar.png', { type: 'image/png' }));
+                avatarInput.files = dt.files;
+            }, 'image/png');
+        });
+    </script>
+</body>
+</html>

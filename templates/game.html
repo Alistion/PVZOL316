@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>植物大战僵尸Online - 私服</title>
+    <style>
+        body {
+            background: #222;
+            text-align: center;
+            color: #eee;
+            font-family: sans-serif;
+            margin: 0;
+            padding-top: 20px;
+        }
+        .topbar {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .topbar b  { color: #76b900; }
+        .topbar a  { color: #ff4444; text-decoration: none; font-weight: bold; }
+        .topbar a:hover { text-decoration: underline; }
+    </style>
+    <script>
+        function gotoFriendPage() {
+            var targetUid = prompt("👑 \n请输入你想添加的好友 UID（例如：100002）：");
+            if (targetUid) {
+                fetch('/api/gm_force_add_friend?target=' + targetUid)
+                    .then(function(r) { return r.text(); })
+                    .then(function(text) {
+                        if (text === "OK") {
+                            alert("✅ 添加成功！\n请刷新游戏网页！");
+                        } else {
+                            alert("❌ 添加失败：" + text);
+                        }
+                    });
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="topbar">
+        欢迎，<b>{{ username }} (UID: {{ uid }})</b>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        <a href="/logout">🚪 退出登录</a>
+    </div>
+
+    <embed
+        src="/main.swf"
+        width="760"
+        height="600"
+        type="application/x-shockwave-flash"
+        allowscriptaccess="always"
+        flashvars="base_url={{ custom_base }}&base_url_info={{ custom_base }}"
+    >
+</body>
+</html>
