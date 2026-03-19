@@ -50,6 +50,31 @@ def modify_tool_amount(username, tool_id, amount_delta):
         return True
 
 
+def set_tool_amount(username, tool_id, amount):
+    """直接将道具数量设置为指定值（amount<=0 时删除该行）"""
+    with get_connection() as conn:
+        existing = conn.execute(
+            "SELECT id FROM user_tools WHERE username = ? AND tool_id = ?",
+            (username, tool_id),
+        ).fetchone()
+        if amount <= 0:
+            conn.execute(
+                "DELETE FROM user_tools WHERE username = ? AND tool_id = ?",
+                (username, tool_id),
+            )
+        elif existing:
+            conn.execute(
+                "UPDATE user_tools SET amount = ? WHERE username = ? AND tool_id = ?",
+                (amount, username, tool_id),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO user_tools (username, tool_id, amount) VALUES (?, ?, ?)",
+                (username, tool_id, amount),
+            )
+        conn.commit()
+
+
 def consume_tool(username, tool_id, amount=1):
     """
     扣减道具库存。

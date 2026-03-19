@@ -1,4 +1,6 @@
 # dal/user.py
+from __future__ import annotations
+
 import os
 import sqlite3
 
@@ -247,4 +249,40 @@ def clone_user_data(source_username, target_username):
                 (target_username, o["pid"], o["data"]),
             )
 
+        conn.commit()
+
+
+# 允许通过 update_user_data 修改的字段白名单
+_UPDATABLE_FIELDS = frozenset(
+    {
+        "money",
+        "rmb_money",
+        "level",
+        "honor",
+        "merit",
+        "gift_ticket",
+        "tree_height",
+        "tree_times",
+        "arena_lineup",
+    }
+)
+
+
+def update_user_data(username: str, **fields) -> None:
+    """
+    更新用户任意字段，白名单保护防止传入非法列名。
+
+    示例：
+        update_user_data("Alice", money=99999, level=200)
+        update_user_data("Alice", arena_lineup="1,2,3,4")
+    """
+    safe = {k: v for k, v in fields.items() if k in _UPDATABLE_FIELDS}
+    if not safe:
+        return
+    set_clause = ", ".join(f"{k} = ?" for k in safe)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE users SET {set_clause} WHERE username = ?",
+            list(safe.values()) + [username],
+        )
         conn.commit()

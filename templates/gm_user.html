@@ -1,0 +1,613 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>GM - {{ user.username }}</title>
+        <style>
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                font-family: sans-serif;
+                background: #f0f2f5;
+                color: #333;
+                padding: 24px;
+            }
+
+            /* ── 顶栏 ── */
+            .topbar {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                max-width: 1100px;
+                margin: 0 auto 24px;
+            }
+            .topbar a {
+                color: #007bff;
+                text-decoration: none;
+                font-size: 14px;
+                white-space: nowrap;
+            }
+            .topbar a:hover {
+                text-decoration: underline;
+            }
+            .topbar h1 {
+                font-size: 20px;
+                flex: 1;
+            }
+            .topbar .uid-tag {
+                background: #e8f0fe;
+                color: #1a56db;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 13px;
+                font-weight: bold;
+            }
+
+            /* ── 卡片 ── */
+            .card {
+                background: #fff;
+                border-radius: 10px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+                padding: 22px 26px;
+                max-width: 1100px;
+                margin: 0 auto 20px;
+            }
+            .card-title {
+                font-size: 15px;
+                font-weight: 700;
+                color: #444;
+                margin-bottom: 16px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #f0f0f0;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            /* ── 属性网格 ── */
+            .attr-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 14px;
+                margin-bottom: 16px;
+            }
+            .attr-grid label {
+                display: block;
+                font-size: 12px;
+                color: #888;
+                margin-bottom: 4px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.4px;
+            }
+            .attr-grid input[type="number"],
+            .attr-grid input[type="text"] {
+                width: 100%;
+                padding: 8px 10px;
+                border: 1px solid #d9d9d9;
+                border-radius: 6px;
+                font-size: 14px;
+                transition: border 0.2s;
+                background: #fafafa;
+            }
+            .attr-grid input:focus {
+                border-color: #007bff;
+                background: #fff;
+                outline: none;
+            }
+
+            /* ── 表格 ── */
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            th,
+            td {
+                padding: 10px 12px;
+                text-align: left;
+                font-size: 13px;
+                border-bottom: 1px solid #f5f5f5;
+            }
+            th {
+                color: #999;
+                font-weight: 600;
+                font-size: 12px;
+                background: #fafafa;
+                text-transform: uppercase;
+                letter-spacing: 0.4px;
+            }
+            tr:last-child td {
+                border-bottom: none;
+            }
+            tr:hover td {
+                background: #fafcff;
+            }
+
+            /* ── 按钮 ── */
+            .btn {
+                display: inline-block;
+                padding: 7px 14px;
+                border: none;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: bold;
+                cursor: pointer;
+                text-decoration: none;
+                transition: opacity 0.15s;
+                white-space: nowrap;
+            }
+            .btn:hover {
+                opacity: 0.82;
+            }
+            .btn-primary {
+                background: #007bff;
+                color: #fff;
+            }
+            .btn-success {
+                background: #28a745;
+                color: #fff;
+            }
+            .btn-danger {
+                background: #dc3545;
+                color: #fff;
+            }
+            .btn-warning {
+                background: #ffc107;
+                color: #212529;
+            }
+            .btn-sm {
+                padding: 4px 10px;
+                font-size: 12px;
+            }
+
+            /* ── 工具栏行（表格头部的操作行） ── */
+            .toolbar {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 14px;
+                flex-wrap: wrap;
+            }
+            .toolbar input[type="number"],
+            .toolbar input[type="text"],
+            .toolbar select {
+                padding: 7px 10px;
+                border: 1px solid #d9d9d9;
+                border-radius: 6px;
+                font-size: 13px;
+                background: #fafafa;
+                outline: none;
+                transition: border 0.2s;
+            }
+            .toolbar input:focus,
+            .toolbar select:focus {
+                border-color: #007bff;
+                background: #fff;
+            }
+
+            /* ── 行内表单（不换行） ── */
+            .inline-form {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .inline-form input[type="number"] {
+                width: 90px;
+                padding: 5px 8px;
+                border: 1px solid #d9d9d9;
+                border-radius: 5px;
+                font-size: 13px;
+                background: #fafafa;
+                outline: none;
+            }
+            .inline-form input:focus {
+                border-color: #007bff;
+                background: #fff;
+            }
+
+            /* ── 危险区 ── */
+            .danger-card {
+                border: 1px solid #ffe0e0;
+                background: #fff8f8;
+            }
+            .danger-card .card-title {
+                color: #c0392b;
+            }
+
+            /* ── 空状态 ── */
+            .empty {
+                text-align: center;
+                padding: 30px;
+                color: #bbb;
+                font-size: 14px;
+            }
+
+            /* ── 品质徽章 ── */
+            .badge {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 10px;
+                font-size: 12px;
+                font-weight: bold;
+                background: #e8f4fd;
+                color: #1a7abf;
+            }
+
+            /* ── 数值高亮 ── */
+            .num {
+                font-family: monospace;
+                font-size: 13px;
+                color: #555;
+            }
+
+            /* ── 分割线 ── */
+            .divider {
+                border: none;
+                border-top: 1px solid #f0f0f0;
+                margin: 14px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- ── 顶栏 ── -->
+        <div class="topbar">
+            <a href="/gm">← 返回用户列表</a>
+            <h1>{{ user.username }}</h1>
+            <span class="uid-tag">UID {{ uid }}</span>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             1. 基础属性
+        ══════════════════════════════════════════ -->
+        <div class="card">
+            <div class="card-title">📊 基础属性</div>
+            <form method="POST">
+                <input type="hidden" name="action" value="update_info" />
+                <div class="attr-grid">
+                    <div>
+                        <label>金币</label>
+                        <input
+                            type="number"
+                            name="money"
+                            value="{{ user.money }}"
+                        />
+                    </div>
+                    <div>
+                        <label>金券</label>
+                        <input
+                            type="number"
+                            name="rmb_money"
+                            value="{{ user.rmb_money }}"
+                        />
+                    </div>
+                    <div>
+                        <label>等级</label>
+                        <input
+                            type="number"
+                            name="level"
+                            value="{{ user.level }}"
+                        />
+                    </div>
+                    <div>
+                        <label>荣誉</label>
+                        <input
+                            type="number"
+                            name="honor"
+                            value="{{ user.honor or 0 }}"
+                        />
+                    </div>
+                    <div>
+                        <label>功勋</label>
+                        <input
+                            type="number"
+                            name="merit"
+                            value="{{ user.merit or 0 }}"
+                        />
+                    </div>
+                    <div>
+                        <label>礼券</label>
+                        <input
+                            type="number"
+                            name="gift_ticket"
+                            value="{{ user.gift_ticket or 0 }}"
+                        />
+                    </div>
+                    <div>
+                        <label>世界树高度</label>
+                        <input
+                            type="number"
+                            name="tree_height"
+                            value="{{ user.tree_height or 0 }}"
+                        />
+                    </div>
+                    <div>
+                        <label>树施肥次数</label>
+                        <input
+                            type="number"
+                            name="tree_times"
+                            value="{{ user.tree_times or 9999 }}"
+                        />
+                    </div>
+                </div>
+                <div style="margin-bottom: 14px">
+                    <label
+                        style="
+                            font-size: 12px;
+                            color: #888;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.4px;
+                            display: block;
+                            margin-bottom: 4px;
+                        "
+                    >
+                        斗技场阵容 ID（英文逗号分隔）
+                    </label>
+                    <input
+                        type="text"
+                        name="arena_lineup"
+                        value="{{ arena_lineup }}"
+                        placeholder="例：3,1,5,2"
+                        style="
+                            width: 100%;
+                            max-width: 400px;
+                            padding: 8px 10px;
+                            border: 1px solid #d9d9d9;
+                            border-radius: 6px;
+                            font-size: 14px;
+                            background: #fafafa;
+                            outline: none;
+                        "
+                    />
+                </div>
+                <button type="submit" class="btn btn-success">
+                    💾 保存所有属性
+                </button>
+            </form>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             2. 道具背包
+        ══════════════════════════════════════════ -->
+        <div class="card">
+            <div class="card-title">
+                🎒 道具背包
+                <span
+                    style="
+                        margin-left: auto;
+                        font-size: 12px;
+                        color: #aaa;
+                        font-weight: 400;
+                    "
+                >
+                    共 {{ tools | length }} 种道具
+                </span>
+            </div>
+
+            <!-- 新增道具表单 -->
+            <div class="toolbar">
+                <form method="POST" class="inline-form">
+                    <input type="hidden" name="action" value="add_tool" />
+                    <input
+                        type="number"
+                        name="tool_id"
+                        placeholder="道具 ID"
+                        min="1"
+                        required
+                    />
+                    <input
+                        type="number"
+                        name="amount"
+                        placeholder="数量"
+                        value="99"
+                        min="1"
+                        required
+                    />
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        ＋ 添加道具
+                    </button>
+                </form>
+            </div>
+
+            {% if tools %}
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 80px">ID</th>
+                        <th>名称</th>
+                        <th style="width: 80px">当前数量</th>
+                        <th style="width: 200px">修改数量</th>
+                        <th style="width: 70px">删除</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in tools %}
+                    <tr>
+                        <td class="num">{{ t.tool_id }}</td>
+                        <td>{{ t.name if t.name else '—' }}</td>
+                        <td class="num">{{ t.amount }}</td>
+                        <td>
+                            <form method="POST" class="inline-form">
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="set_tool"
+                                />
+                                <input
+                                    type="hidden"
+                                    name="tool_id"
+                                    value="{{ t.tool_id }}"
+                                />
+                                <input
+                                    type="number"
+                                    name="amount"
+                                    value="{{ t.amount }}"
+                                    min="0"
+                                />
+                                <button
+                                    type="submit"
+                                    class="btn btn-warning btn-sm"
+                                >
+                                    保存
+                                </button>
+                            </form>
+                        </td>
+                        <td>
+                            <form method="POST">
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="del_tool"
+                                />
+                                <input
+                                    type="hidden"
+                                    name="tool_id"
+                                    value="{{ t.tool_id }}"
+                                />
+                                <button
+                                    type="submit"
+                                    class="btn btn-danger btn-sm"
+                                    onclick="return confirm('删除道具 {{ t.tool_id }}（{{ t.name }}）？')"
+                                >
+                                    删除
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty">背包空空如也</div>
+            {% endif %}
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             3. 植物仓库
+        ══════════════════════════════════════════ -->
+        <div class="card">
+            <div class="card-title">
+                🌿 植物仓库
+                <span
+                    style="
+                        margin-left: auto;
+                        font-size: 12px;
+                        color: #aaa;
+                        font-weight: 400;
+                    "
+                >
+                    共 {{ organisms | length }} 只
+                </span>
+            </div>
+
+            {% if organisms %}
+            <!-- 清空按钮 -->
+            <div class="toolbar">
+                <form method="POST">
+                    <input type="hidden" name="action" value="clear_orgs" />
+                    <button
+                        type="submit"
+                        class="btn btn-danger btn-sm"
+                        onclick="return confirm('确定清空 {{ user.username }} 的所有植物？\n此操作不可逆！')"
+                    >
+                        🗑️ 清空所有植物
+                    </button>
+                </form>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60px">DB ID</th>
+                        <th style="width: 70px">植物ID</th>
+                        <th>名称</th>
+                        <th style="width: 70px">等级</th>
+                        <th style="width: 80px">品质</th>
+                        <th style="width: 110px">攻击</th>
+                        <th style="width: 110px">最大血量</th>
+                        <th style="width: 120px">战斗力</th>
+                        <th style="width: 60px">删除</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in organisms %}
+                    <tr>
+                        <td class="num" style="color: #bbb">{{ o.id }}</td>
+                        <td class="num">{{ o.orderId }}</td>
+                        <td>{{ o.name }}</td>
+                        <td class="num">{{ o.grade }}</td>
+                        <td><span class="badge">{{ o.quality }}</span></td>
+                        <td class="num">{{ "{:,}".format(o.attack) }}</td>
+                        <td class="num">{{ "{:,}".format(o.hp_max) }}</td>
+                        <td class="num">{{ "{:,}".format(o.fighting) }}</td>
+                        <td>
+                            <form method="POST">
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="del_org"
+                                />
+                                <input
+                                    type="hidden"
+                                    name="org_id"
+                                    value="{{ o.id }}"
+                                />
+                                <button
+                                    type="submit"
+                                    class="btn btn-danger btn-sm"
+                                    onclick="return confirm('删除植物「{{ o.name }}」(DB ID: {{ o.id }})？')"
+                                >
+                                    删除
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty">仓库里没有植物</div>
+            {% endif %}
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             4. 危险区域
+        ══════════════════════════════════════════ -->
+        <div class="card danger-card">
+            <div class="card-title">⚠️ 危险区域</div>
+            <div
+                style="
+                    display: flex;
+                    gap: 12px;
+                    flex-wrap: wrap;
+                    align-items: center;
+                "
+            >
+                <form method="POST">
+                    <input type="hidden" name="action" value="reset_tree" />
+                    <button
+                        type="submit"
+                        class="btn btn-warning"
+                        onclick="return confirm('重置 {{ user.username }} 的世界树？')"
+                    >
+                        🌲 重置世界树
+                    </button>
+                </form>
+
+                <form method="POST">
+                    <input type="hidden" name="action" value="delete_user" />
+                    <button
+                        type="submit"
+                        class="btn btn-danger"
+                        onclick="return confirm('⚠️ 警告！\n\n确定永久删除账号「{{ user.username }}」？\n\n所有金钱、道具、植物将一并清除，不可恢复！')"
+                    >
+                        🗑️ 删除此账号
+                    </button>
+                </form>
+            </div>
+        </div>
+    </body>
+</html>

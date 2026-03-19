@@ -4,7 +4,13 @@
 from .arena import get_arena_lineup, update_arena_lineup
 from .core import get_connection, init_db
 from .friend import add_friend_to_db, get_friend_details
-from .item import consume_tool, get_tool_amount, get_user_tools, modify_tool_amount
+from .item import (
+    consume_tool,
+    get_tool_amount,
+    get_user_tools,
+    modify_tool_amount,
+    set_tool_amount,
+)
 from .plant import (
     add_organism,
     clear_organisms,
@@ -25,6 +31,7 @@ from .user import (
     update_avatar,
     update_tree_height,
     update_user_currencies,
+    update_user_data,
     update_user_gm,
     verify_user,
 )

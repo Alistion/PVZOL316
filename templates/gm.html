@@ -4,284 +4,192 @@
         <meta charset="UTF-8" />
         <title>PvZ - GM 控制台</title>
         <style>
+            * {
+                box-sizing: border-box;
+            }
             body {
                 font-family: sans-serif;
-                background: #f4f4f4;
-                padding: 30px;
+                background: #f0f2f5;
                 margin: 0;
+                padding: 30px;
                 color: #333;
             }
             .header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 20px;
-                max-width: 1200px;
-                margin-left: auto;
-                margin-right: auto;
+                max-width: 1100px;
+                margin: 0 auto 24px;
             }
             .header h1 {
                 margin: 0;
-                color: #333;
-                font-size: 24px;
+                font-size: 22px;
             }
             .header a {
                 color: #007bff;
                 text-decoration: none;
                 font-weight: bold;
             }
-            .header a:hover {
-                text-decoration: underline;
-            }
 
-            .container {
+            .card {
                 background: #fff;
-                padding: 20px 30px;
-                border-radius: 8px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                margin-bottom: 20px;
-                max-width: 1200px;
-                margin-left: auto;
-                margin-right: auto;
-                overflow-x: auto;
+                border-radius: 10px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                padding: 24px 28px;
+                max-width: 1100px;
+                margin: 0 auto 24px;
             }
-            .container h3 {
-                margin-top: 0;
-                color: #333;
-                font-size: 18px;
-                border-bottom: 1px solid #eee;
+            .card h3 {
+                margin: 0 0 16px;
+                font-size: 16px;
+                color: #555;
+                border-bottom: 1px solid #f0f0f0;
                 padding-bottom: 10px;
             }
 
             table {
                 border-collapse: collapse;
                 width: 100%;
-                margin-top: 10px;
             }
             th,
             td {
-                border: 1px solid #e0e0e0;
-                padding: 12px;
-                text-align: center;
+                padding: 11px 14px;
+                text-align: left;
+                border-bottom: 1px solid #f0f0f0;
+                font-size: 14px;
             }
             th {
-                background-color: #f8f9fa;
-                font-weight: bold;
-                color: #555;
+                color: #888;
+                font-weight: 600;
+                background: #fafafa;
             }
-            tr:hover {
-                background-color: #f1f7fd;
+            tr:last-child td {
+                border-bottom: none;
+            }
+            tr:hover td {
+                background: #f7faff;
             }
 
-            input[type="number"],
-            input[type="text"],
-            select {
-                padding: 8px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                box-sizing: border-box;
-                width: 100%;
-                outline: none;
-                transition: border 0.3s;
-                font-size: 14px;
-                background: white;
+            .uid {
+                font-weight: bold;
+                color: #007bff;
+                font-size: 15px;
             }
-            input:focus,
-            select:focus {
-                border-color: #007bff;
+            .name {
+                font-weight: 600;
             }
 
             .btn {
+                display: inline-block;
+                padding: 6px 14px;
                 border: none;
-                padding: 8px 15px;
+                border-radius: 5px;
                 cursor: pointer;
+                font-size: 13px;
                 font-weight: bold;
-                border-radius: 4px;
-                color: white;
-                transition: background 0.2s;
-                font-size: 14px;
-                white-space: nowrap;
+                text-decoration: none;
+                transition: opacity 0.15s;
+            }
+            .btn:hover {
+                opacity: 0.82;
             }
             .btn-primary {
                 background: #007bff;
-            }
-            .btn-primary:hover {
-                background: #0056b3;
+                color: #fff;
             }
             .btn-danger {
                 background: #dc3545;
-            }
-            .btn-danger:hover {
-                background: #c82333;
-            }
-            .btn-success {
-                background: #28a745;
-            }
-            .btn-success:hover {
-                background: #218838;
+                color: #fff;
             }
             .btn-warning {
                 background: #ffc107;
                 color: #212529;
             }
-            .btn-warning:hover {
-                background: #e0a800;
-            }
 
-            .panels {
+            /* Clone panel */
+            .clone-row {
                 display: flex;
-                gap: 20px;
+                gap: 16px;
+                align-items: flex-end;
                 flex-wrap: wrap;
-                max-width: 1200px;
-                margin-left: auto;
-                margin-right: auto;
             }
-            .panel {
-                background: #fff;
-                padding: 20px 30px;
-                border-radius: 8px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            .clone-row .fg {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
                 flex: 1;
-                min-width: 300px;
+                min-width: 180px;
             }
-            .panel h3 {
-                margin-top: 0;
-                color: #333;
-                font-size: 18px;
-                border-bottom: 1px solid #eee;
-                padding-bottom: 10px;
-                margin-bottom: 15px;
-            }
-            .form-group {
-                margin-bottom: 15px;
-                text-align: left;
-            }
-            .form-group label {
-                display: block;
-                margin-bottom: 5px;
-                font-weight: bold;
+            .clone-row label {
+                font-size: 13px;
+                font-weight: 600;
                 color: #555;
-                font-size: 14px;
             }
-            .uid-badge {
-                font-weight: bold;
-                color: #007bff;
-                font-size: 16px;
+            select,
+            input[type="number"],
+            input[type="text"] {
+                padding: 8px 10px;
+                border: 1px solid #d9d9d9;
+                border-radius: 5px;
+                font-size: 14px;
+                width: 100%;
+                background: #fff;
+                outline: none;
+                transition: border 0.2s;
+            }
+            select:focus,
+            input:focus {
+                border-color: #007bff;
             }
         </style>
     </head>
     <body>
         <div class="header">
             <h1>🛠️ GM 控制台</h1>
-            <a href="/">返回游戏主页</a>
+            <a href="/">← 返回游戏</a>
         </div>
 
-        <!-- ── 1. 角色属性管理 ── -->
-        <div class="container">
-            <h3>👥 1. 角色属性管理</h3>
+        <!-- ── 用户列表 ── -->
+        <div class="card">
+            <h3>👥 用户列表</h3>
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 100px">UID</th>
-                        <th>角色名</th>
-                        <th style="width: 140px">金币</th>
-                        <th style="width: 140px">金券</th>
-                        <th style="width: 90px">等级</th>
-                        <th style="width: 80px">保存</th>
-                        <th style="width: 220px">危险操作</th>
+                        <th>UID</th>
+                        <th>用户名</th>
+                        <th>等级</th>
+                        <th>金币</th>
+                        <th>金券</th>
+                        <th>荣誉</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for u in users %} {% set uid = u.id + 100000 %}
                     <tr>
-                        <!-- 属性修改表单 -->
-                        <form method="POST" action="/gm">
-                            <input
-                                type="hidden"
-                                name="action"
-                                value="update_user"
-                            />
-                            <input type="hidden" name="uid" value="{{ uid }}" />
-
-                            <td class="uid-badge">{{ uid }}</td>
-                            <td style="color: #666">{{ u.username }}</td>
-                            <td>
-                                <input
-                                    type="number"
-                                    name="money"
-                                    value="{{ u.money }}"
-                                />
-                            </td>
-                            <td>
-                                <input
-                                    type="number"
-                                    name="rmb_money"
-                                    value="{{ u.rmb_money }}"
-                                />
-                            </td>
-                            <td>
-                                <input
-                                    type="number"
-                                    name="level"
-                                    value="{{ u.level }}"
-                                />
-                            </td>
-                            <td>
-                                <button type="submit" class="btn btn-success">
-                                    保存
-                                </button>
-                            </td>
-                        </form>
-
-                        <!-- 危险操作列（独立表单） -->
+                        <td class="uid">{{ uid }}</td>
+                        <td class="name">{{ u.username }}</td>
+                        <td>{{ u.level }}</td>
+                        <td>{{ u.money }}</td>
+                        <td>{{ u.rmb_money }}</td>
+                        <td>{{ u.honor or 0 }}</td>
                         <td>
-                            <form
-                                method="POST"
-                                action="/gm"
-                                style="display: inline"
+                            <a href="/gm/user/{{ uid }}" class="btn btn-primary"
+                                >⚙️ 管理</a
                             >
-                                <input
-                                    type="hidden"
-                                    name="action"
-                                    value="clear_orgs"
-                                />
-                                <input
-                                    type="hidden"
-                                    name="uid"
-                                    value="{{ uid }}"
-                                />
-                                <button
-                                    type="submit"
-                                    class="btn btn-warning"
-                                    onclick="return confirm('确定清空 UID {{ uid }} 的所有植物吗？')"
-                                >
-                                    清空植物
-                                </button>
-                            </form>
-                            &nbsp;
-                            <form
-                                method="POST"
-                                action="/gm"
-                                style="display: inline"
-                            >
-                                <input
-                                    type="hidden"
-                                    name="action"
-                                    value="delete_user"
-                                />
-                                <input
-                                    type="hidden"
-                                    name="uid"
-                                    value="{{ uid }}"
-                                />
-                                <button
-                                    type="submit"
-                                    class="btn btn-danger"
-                                    onclick="return confirm('⚠️ 警告：确定彻底删除 UID {{ uid }} 的账号吗？\n此操作不可逆！')"
-                                >
-                                    删除账号
-                                </button>
-                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td
+                            colspan="7"
+                            style="
+                                text-align: center;
+                                color: #aaa;
+                                padding: 30px;
+                            "
+                        >
+                            暂无用户
                         </td>
                     </tr>
                     {% endfor %}
@@ -289,77 +197,21 @@
             </table>
         </div>
 
-        <!-- ── 功能面板行 ── -->
-        <div class="panels">
-            <!-- 2. 物品发送 -->
-            <div class="panel">
-                <h3>📦 2. 物品发送</h3>
-                <form method="POST" action="/gm">
-                    <input type="hidden" name="action" value="add_tool" />
-                    <div class="form-group">
-                        <label>玩家 UID</label>
-                        <select name="uid" required>
-                            {% for u in users %}
-                            <option value="{{ u.id + 100000 }}">
-                                {{ u.id + 100000 }} - {{ u.username }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>道具 ID</label>
-                        <input type="number" name="tool_id" required />
-                    </div>
-                    <div class="form-group">
-                        <label>数量</label>
-                        <input
-                            type="number"
-                            name="amount"
-                            value="99"
-                            required
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        class="btn btn-primary"
-                        style="width: 100%"
-                    >
-                        确认发送
-                    </button>
-                </form>
-            </div>
-
-            <!-- 3. 世界之树 -->
-            <div class="panel">
-                <h3>🌲 3. 世界之树</h3>
-                <form method="POST" action="/gm">
-                    <input type="hidden" name="action" value="reset_tree" />
-                    <div class="form-group">
-                        <label>玩家 UID</label>
-                        <select name="uid" required>
-                            {% for u in users %}
-                            <option value="{{ u.id + 100000 }}">
-                                {{ u.id + 100000 }} - {{ u.username }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <button
-                        type="submit"
-                        class="btn btn-warning"
-                        style="width: 100%"
-                    >
-                        重置高度
-                    </button>
-                </form>
-            </div>
-
-            <!-- 4. 账号数据克隆 -->
-            <div class="panel">
-                <h3>👯 4. 账号数据克隆</h3>
-                <form method="POST" action="/gm">
-                    <input type="hidden" name="action" value="clone_user" />
-                    <div class="form-group">
+        <!-- ── 账号数据克隆 ── -->
+        <div class="card">
+            <h3>👯 账号数据克隆</h3>
+            <form
+                method="POST"
+                action="/gm"
+                onsubmit="
+                    return confirm(
+                        '⚠️ 目标账号的所有金钱、道具和植物将被完全覆盖！\n\n确认执行？',
+                    );
+                "
+            >
+                <input type="hidden" name="action" value="clone_user" />
+                <div class="clone-row">
+                    <div class="fg">
                         <label>数据来源（被复制的大号）</label>
                         <select name="source_uid" required>
                             {% for u in users %}
@@ -369,8 +221,8 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>覆盖目标（接收数据的新号）</label>
+                    <div class="fg">
+                        <label>覆盖目标（接收数据的小号）</label>
                         <select name="target_uid" required>
                             {% for u in users %}
                             <option value="{{ u.id + 100000 }}">
@@ -379,20 +231,13 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <button
-                        type="submit"
-                        class="btn btn-danger"
-                        style="width: 100%"
-                        onclick="
-                            return confirm(
-                                '⚠️ 严重警告：目标账号的所有金钱、物品和植物将被覆盖！\n\n确认执行克隆吗？',
-                            );
-                        "
-                    >
-                        🚀 确认执行克隆覆盖
-                    </button>
-                </form>
-            </div>
+                    <div>
+                        <button type="submit" class="btn btn-danger">
+                            🚀 执行克隆覆盖
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </body>
 </html>
