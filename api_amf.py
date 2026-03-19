@@ -2,7 +2,7 @@
 import json
 import time
 from services import ShopService, ActiveService, OpenBoxService, ServerBattleService, DutyService, VipService,StoneInstance,Instance
-from services import ArenaService,OrganismService
+from services import ArenaService,OrganismService,RewardService
 
 # 【新增】未实现接口的拦截预警器
 def unimplemented_alert(api_name):
@@ -54,6 +54,8 @@ def route_amf_logic(api_name, req_body, current_user):
     elif api_name in ["api.reward.openbox", "api.tool.useOf"]:
         use_amount, amf_org_data = OpenBoxService.open_box(current_user, req_body)
         return {"status": "success", "openAmount": use_amount, "prize_money": 8888, "prize_exp": 1000, "tools": [], "organisms": [amf_org_data]}
+    elif api_name == "api.reward.lottery":
+        return RewardService.get_lottery_prize(current_user, req_body)
         
     # --- 跨服战系统 ---
     elif api_name == "api.serverbattle.qualifying":
@@ -173,7 +175,7 @@ def route_amf_logic(api_name, req_body, current_user):
         return unimplemented_alert(api_name)
 
     # --- 12. VIP与抽奖 (VIP / Reward) ---
-    elif api_name in ["api.vip.awards", "api.vip.startAuto", "api.vip.stopAuto", "api.vip.autoRewards", "api.reward.lottery"]:
+    elif api_name in ["api.vip.awards", "api.vip.startAuto", "api.vip.stopAuto", "api.vip.autoRewards", ]:
         return unimplemented_alert(api_name)
 
     # --- 13. 商城其他功能 ---

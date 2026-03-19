@@ -14,3 +14,4 @@ from .Arena import ArenaService
 from .Auth import AuthService
 from .Friends import FriendService
 from .Organism import OrganismService
+from .Reward import RewardService
