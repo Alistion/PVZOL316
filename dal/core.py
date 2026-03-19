@@ -38,6 +38,9 @@ def init_db():
 
             try: conn.execute('ALTER TABLE users ADD COLUMN arena_lineup TEXT DEFAULT ""')
             except sqlite3.OperationalError: pass
+
+            try: conn.execute('ALTER TABLE users ADD COLUMN arena_rank INTEGER DEFAULT 0')
+            except sqlite3.OperationalError: pass
             
             try: conn.execute('ALTER TABLE users ADD COLUMN password TEXT DEFAULT ""')
             except sqlite3.OperationalError: pass

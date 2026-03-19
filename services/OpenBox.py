@@ -17,8 +17,8 @@ class OpenBoxService:
         real_org_id = int(time.time() % 1000000)
         
         db_org_data = {
-            "orderId": 1705, "attack": 9999999, "miss": 51034, "speed": 6663, 
-            "hp": 9999999, "hp_max": 9999999, "grade": 100, "exp": 0, 
+            "orderId": 1705, "attack": 1, "miss": 51034, "speed": 6663, 
+            "hp": 9999999, "hp_max": 9999999, "grade": 200, "exp": 0, 
             "exp_max": 1000, "exp_min": 0, "im": 0, "precision": 40966, 
             "new_miss": 0, "new_precision": 0, "quality_name": "无极", 
             "dq": 0, "gi": 0, "ma": 0, "ss": 0, "ec": "", "sh": 0, "sa": 0, 

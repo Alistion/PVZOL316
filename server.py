@@ -9,7 +9,7 @@ from config import logger, SECRET_KEY, MASTER_KEY_XML
 from dal import init_db, get_all_users, verify_user, register_user,get_or_create_user
 from api_xml import build_user_xml, build_warehouse_xml, handle_tree_fertilize,build_recommend_friends_xml
 from api_amf import route_amf_logic
-from services import GMService, AuthService  
+from services import GMService, AuthService, OrganismService
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -57,7 +57,24 @@ def handle_game_requests(current_user, path=""):
     if "default/user" in path: return Response(build_user_xml(current_user), mimetype='text/xml')
     if "Warehouse" in path: return Response(build_warehouse_xml(current_user), content_type='text/xml; charset=utf-8')
     if "tree/addheight" in path: return Response(handle_tree_fertilize(current_user), content_type='text/xml; charset=utf-8')
-
+    if "organism/evolution" in path:
+        # URL 示例: organism/evolution/id/35/route/1598/shortcut/2...
+        parts = path.split('/')
+        try:
+            # 动态提取 URL 里的 id 和 route 对应的数字
+            id_index = parts.index('id') + 1
+            org_db_id = int(parts[id_index])
+            
+            route_index = parts.index('route') + 1
+            route_id = int(parts[route_index]) # 提取出来的比如是 1598
+            
+            
+            result_xml = OrganismService.execute_evolution(current_user, org_db_id, route_id)
+            return Response(result_xml, mimetype='text/xml')
+            
+        except (ValueError, IndexError) as e:
+            print(f"[合成屋报错] 解析进化 URL 失败: {e}")
+            return Response("<root><response><status>error</status></response></root>", mimetype='text/xml')
     if "user/recommendfriend" in path:return Response(build_recommend_friends_xml(current_user), mimetype='text/xml')
     if "user/addfriend" in path:
         from services import FriendService
@@ -80,6 +97,9 @@ def handle_game_requests(current_user, path=""):
     
     if path.endswith(('.swf', '.png', '.jpg', '.mp3', '.xml')): return "File Not Found", 404
     return Response(MASTER_KEY_XML, mimetype='text/xml')
+
+    
+
 
 # ================= 动态玩家专属路由 (使用 UID) =================
 @app.route('/u/<int:uid>/', methods=['GET', 'POST', 'OPTIONS'])

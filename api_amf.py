@@ -2,7 +2,7 @@
 import json
 import time
 from services import ShopService, ActiveService, OpenBoxService, ServerBattleService, DutyService, VipService,StoneInstance,Instance
-from services import ArenaService
+from services import ArenaService,OrganismService
 
 # 【新增】未实现接口的拦截预警器
 def unimplemented_alert(api_name):
@@ -60,6 +60,9 @@ def route_amf_logic(api_name, req_body, current_user):
         return ServerBattleService.get_qualifying_info(current_user)
         
     # --- 植物/技能系统 ---
+    elif api_name == "api.apiorganism.getEvolutionCost":
+        return OrganismService.get_evolution_cost(current_user, req_body)
+    
     elif api_name == "api.apiorganism.getEvolutionOrgs": return None
     elif api_name == "api.apiskill.getAllSkills":
         try:
@@ -96,7 +99,7 @@ def route_amf_logic(api_name, req_body, current_user):
 
 
     # ==========================================
-    # 🚧 尚未实现的功能占位符 (根据官方蓝图自动预警)
+    # 🚧 尚未实现的功能占位符
     # ==========================================
 
     # --- 1. 斗技场系统 (Arena) ---
