@@ -3,7 +3,7 @@ from flask import Blueprint, redirect, render_template, request, session
 
 from dal import get_or_create_user, register_user, update_avatar, verify_user
 from services import AuthService
-
+from blueprints.game_bp import process_amf_request
 auth_bp = Blueprint("auth", __name__)
 
 
@@ -12,7 +12,7 @@ def index():
     if request.method == "POST":
         # Flash 发来的 AMF 裸 POST（无 form 数据）
         if not request.form:
-            from blueprints.game_bp import process_amf_request
+            
 
             return process_amf_request(session.get("username", "TL"))
 
