@@ -111,6 +111,9 @@ _AMF_ROUTES: dict = {
     "api.apiorganism.qualityUp":lambda u, b: OrganismService.quality_up(
         u,b
     ),
+    "api.tool.synthesis": lambda u, b: OrganismService.synthesis(
+        u, b
+    ),
     # ── 任务 / 邮件 ───────────────────────────────────────────────────────────
     "api.duty.getAll": lambda u, b: DutyService.get_all_duties(u),
     "api.duty.getDuty": lambda u, b: None,
@@ -158,7 +161,6 @@ _UNIMPLEMENTED: set = {
     "api.fuben.reward",
     "api.fuben.award",
     # 植物强化 / 合成
-    "api.tool.synthesis",
     "api.apiorganism.matureRecompute",
     "api.apiorganism.quality12Up",
     "api.apiorganism.skillLearn",

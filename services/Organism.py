@@ -10,6 +10,8 @@ from dal import (
     get_organism_by_id,
     update_organism_data,
     update_user_currencies,
+    get_organism_by_id,
+    delete_organism_by_id
 )
 
 # ================= 品质升级路线配置表 =================
@@ -294,4 +296,85 @@ class OrganismService:
             "new_syn_precision": "0",
             "new_syn_miss": "0",
             "sa": "0", "sh": "0", "sm": "0", "ss": "0", "gi": "0", "spr": "0"
+        }
+    
+    @staticmethod
+    def synthesis(username, req_body):
+        # 参数解析 [0, org1_id, org2_id, tool_id, toolsnum]
+        args = req_body[0] if len(req_body) == 1 and isinstance(req_body[0], list) else req_body
+        
+        try:
+            # 兼容性处理索引
+            start_idx = 1 if args[0] == 0 else 0
+            org1_id = int(args[start_idx])
+            org2_id = int(args[start_idx + 1])
+            tool_id = int(args[start_idx + 2])   # 合成书
+            tool_num = int(args[start_idx + 3])  # 催化剂数量
+        except: return None
+
+        
+        org1_data = get_organism_by_id(username, org1_id)
+        org2_data = get_organism_by_id(username, org2_id)
+        if not org1_data or not org2_data: return None
+
+        # 1. 定义本次合成增加的数值 (全部初始化为 0)
+        # 注意：源码里全是加法，所以后端只给“本次提升量”
+        diff = {
+            "hp": 0, "attack": 0, "speed": 0, 
+            "precision": 0, "new_precision": 0,
+            "miss": 0, "new_miss": 0
+        }
+
+        # 2. 根据合成书类型计算加成 
+        # 催化剂(tool_num)越多，加成越高
+        power = max(1, tool_num) * 10 
+
+        if tool_id == 445: # HP合成
+            diff["hp"] = power
+        elif tool_id == 446: # 攻击合成
+            diff["attack"] = power
+        elif tool_id == 447: # 护甲合成
+            diff["miss"] = power
+        elif tool_id == 448: # 穿透合成
+            diff["precision"] = power 
+        elif tool_id == 449: # 速度合成
+            diff["speed"] = power
+        elif tool_id == 1093: # 闪避合成
+            diff["new_miss"] = power 
+        elif tool_id == 1094: # 命中合成
+            diff["new_precision"] = power 
+        
+
+        # 3. 更新数据库里的植物数据
+        org1_data["attack"] = int(org1_data.get("attack", 0)) + diff["attack"]
+        org1_data["hp_max"] = int(org1_data.get("hp_max", 100)) + diff["hp"]
+        org1_data["precision"] = int(org1_data.get("precision", 0)) + diff["precision"]
+        org1_data["new_precision"] = int(org1_data.get("new_precision", 0)) + diff["new_precision"]
+        org1_data["miss"] = int(org1_data.get("miss", 0)) + diff["miss"]
+        org1_data["new_miss"] = int(org1_data.get("new_miss", 0)) + diff["new_miss"]
+        org1_data["speed"] = int(org1_data.get("speed", 0)) + diff["speed"]
+
+        # 计算总战力 (源码里 setBattleE 是直接覆盖)
+        new_fight = (int(org1_data["attack"]) * 2 + int(org1_data["hp_max"]) // 5)
+        org1_data["fighting"] = new_fight
+
+        # 4. 消耗材料和植物
+        consume_tool(username, tool_id, 1) # 消耗1本书
+        consume_tool(username, 450, tool_num) # 消耗催化剂数量
+
+        delete_organism_by_id(username, org2_id)
+        update_organism_data(username, org1_id, org1_data)
+
+        # 5. 【按照源码要求返回】
+        # _loc3_ 到 _loc9_ 全是 String(param2.xxx)
+        # 只有 fight 是直接用的 param2.fight
+        return {
+            "hp": str(diff["hp"]),                # 本次加了多少血
+            "attack": str(diff["attack"]),        # 本次加了多少攻
+            "precision": str(diff["precision"]),  # 本次加了多少命中
+            "new_precision": str(diff["new_precision"]),
+            "miss": str(diff["miss"]),            # 本次加了多少闪避
+            "new_miss": str(diff["new_miss"]),
+            "speed": str(diff["speed"]),          # 本次加了多少速度
+            "fight": str(new_fight)               # 总战力 (注意：只有它是传最终值)
         }
