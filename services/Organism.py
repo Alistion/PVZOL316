@@ -354,7 +354,7 @@ class OrganismService:
         org1_data["new_miss"] = int(org1_data.get("new_miss", 0)) + diff["new_miss"]
         org1_data["speed"] = int(org1_data.get("speed", 0)) + diff["speed"]
 
-        # 计算总战力 (源码里 setBattleE 是直接覆盖)
+        # 计算总战力 
         new_fight = (int(org1_data["attack"]) * 2 + int(org1_data["hp_max"]) // 5)
         org1_data["fighting"] = new_fight
 
