@@ -2,6 +2,7 @@
 import time
 import datetime
 from dal import update_user_currencies, modify_tool_amount
+from config import logger
 class ActiveService:
     @staticmethod
     def get_sign_info(username):
@@ -89,3 +90,18 @@ class ActiveService:
         update_user_currencies(username, money_delta=888)
         modify_tool_amount(username, tool_id=3008, amount_delta=1)
         return {"id": 1, "amount": 888}, {"id": 3008, "amount": 1}
+    
+    @staticmethod
+    def get_banner(username, req_body):
+        """
+        处理获取活动 Banner 的请求 (api.banner.get)
+        返回海报图片的 URL 和点击后跳转的网页 URL
+        """
+        logger.info(f"[活动系统] {username} 请求加载活动 Banner")
+        
+        # 你可以在这里配置你自己的图片路径和跳转链接
+        # 图片路径最好是相对路径（放在你的资源目录下），或者是完整的外链 http://...
+        return {
+            "img": r"cache\pvz\events\1.png",  # 你的活动海报图片路径 (注意确保客户端能加载到这个文件)
+            "url": "http://127.0.0.1:8080/activity/spin_win"        # 玩家点击参与活动后跳转的网页链接
+        }

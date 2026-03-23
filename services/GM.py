@@ -20,7 +20,7 @@ class GMService:
         """处理 GM 用户列表页的表单提交（克隆等全局操作）"""
         action = form.get("action")
 
-        # ── 账号克隆（需要两个 UID）──
+        # ── 账号克隆 ──
         if action == "clone_user":
             try:
                 src_uid = int(form.get("source_uid", 0))

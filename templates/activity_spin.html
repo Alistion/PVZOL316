@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Plants Vs Zombies OL - 幸运大转盘</title>
+<style>
+    body {
+        background-color: #1a1a1a;
+        color: #fff;
+        font-family: "Microsoft YaHei", sans-serif;
+        text-align: center;
+        margin: 0;
+        padding-top: 20px;
+    }
+    h1 { color: #f1c40f; text-shadow: 2px 2px 4px #000; }
+    .subtitle { color: #aaa; margin-bottom: 20px; }
+
+    /* 转盘容器 */
+    .wheel-container {
+        position: relative;
+        width: 300px;
+        height: 300px;
+        margin: 0 auto;
+        /* PVZ 风格的绿色边框 */
+        border: 10px solid #2ecc71; 
+        border-radius: 50%;
+        box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
+        overflow: hidden;
+        background: #f1c40f; /* 基础底色 */
+    }
+
+    /* 转盘本身，用于旋转 */
+    #wheel {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99); /* 顺滑的物理减速 */
+    }
+
+    /* 指针 */
+    .pointer {
+        position: absolute;
+        top: -15px; /* 稍微突出一点 */
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        border-top: 30px solid #e74c3c; /* 红色指针 */
+        z-index: 10;
+        filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+    }
+
+    /* 按钮 */
+    #spinBtn {
+        margin-top: 30px;
+        padding: 10px 30px;
+        font-size: 18px;
+        font-weight: bold;
+        background-color: #2ecc71;
+        color: white;
+        border: 4px solid #fff;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 4px 0 #27ae60;
+        transition: all 0.1s;
+    }
+    #spinBtn:hover { background-color: #27ae60; }
+    #spinBtn:active { transform: translateY(2px); box-shadow: 0 2px 0 #27ae60; }
+    #spinBtn:disabled { background-color: #95a5a6; border-color: #aaa; box-shadow: 0 4px 0 #7f8c8d; cursor: not-allowed; }
+
+    /* 结果显示区 */
+    #result { margin-top: 20px; font-size: 20px; font-weight: bold; min-height: 24px;}
+    .win { color: #2ecc71; }
+    .fail { color: #e74c3c; }
+</style>
+</head>
+<body>
+
+    <h1>幸运大转盘</h1>
+    <p class="subtitle">Plants Vs Zombies OL 运营团队</p>
+
+    <div class="wheel-container">
+        <div class="pointer"></div>
+        <canvas id="wheel" width="300" height="300"></canvas>
+    </div>
+
+    <button id="spinBtn">点击抽奖</button>
+
+    <p id="result"></p>
+
+<script>
+    // === 配置奖品 ===
+    // ⚠️ 纯前端展示用，不具备后端真实性，请自行调整文本
+    const prizes = [
+        { text: "10万金币", color: "#f1c40f" }, // 黄色 (太阳)
+        { text: "感谢参与", color: "#34495e" }, // 深灰 (墓碑)
+        { text: "10万经验书", color: "#2ecc71" }, // 绿色 (植物)
+        { text: "再来一次", color: "#9b59b6" }, // 紫色 (僵尸)
+        { text: "50钻石", color: "#3498db" },    // 蓝色 (钻石)
+        { text: "向日葵碎片", color: "#e67e22" },// 橙色
+        { text: "1星植物袋", color: "#ecf0f1" }, // 白色
+        { text: "谢谢惠顾", color: "#e74c3c" }     // 红色 (血)
+    ];
+
+    const wheel = document.getElementById('wheel');
+    const ctx = wheel.getContext('2d');
+    const spinBtn = document.getElementById('spinBtn');
+    const resultText = document.getElementById('result');
+    
+    const numPrizes = prizes.length;
+    const arc = Math.PI * 2 / numPrizes; // 每个奖品的弧度大小
+    let currentAngle = 0;
+    let isSpinning = false;
+
+    // === 绘制转盘 ===
+    function drawWheel() {
+        ctx.clearRect(0, 0, wheel.width, wheel.height);
+        
+        // 移到中心点
+        ctx.translate(150, 150);
+        ctx.rotate(-Math.PI / 2); // 让第一个奖品正对上方
+
+        for (let i = 0; i < numPrizes; i++) {
+            const angle = i * arc;
+            ctx.fillStyle = prizes[i].color;
+            
+            // 绘制扇形
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, 140, angle, angle + arc, false);
+            ctx.closePath();
+            ctx.fill();
+
+            // 绘制文字
+            ctx.save();
+            ctx.fillStyle = "#fff";
+            ctx.shadowColor = "rgba(0,0,0,0.8)";
+            ctx.shadowBlur = 4;
+            ctx.font = "bold 14px Microsoft YaHei";
+            ctx.translate(0, 0);
+            ctx.rotate(angle + arc / 2); // 旋转到扇形中间
+            ctx.fillText(prizes[i].text, 60, 5); // 调整文字位置
+            ctx.restore();
+        }
+    }
+
+    // === 点击抽奖逻辑 ===
+    spinBtn.addEventListener('click', () => {
+        if (isSpinning) return;
+        
+        isSpinning = true;
+        spinBtn.disabled = true;
+        resultText.innerHTML = "正在向僵尸博士祈祷...";
+        resultText.className = "";
+
+        // 1. 生成随机旋转度数
+        // 保底转 5 圈 (360 * 5) + 随机多转的角度
+        const randomDeg = Math.floor(Math.random() * 360);
+        const totalDeg = 360 * 5 + randomDeg;
+        
+        // 2. 应用旋转动画 (使用 CSS transition)
+        wheel.style.transform = `rotate(${totalDeg}deg)`;
+
+        // 3. 计算结果 (动画结束后)
+        setTimeout(() => {
+            isSpinning = false;
+            spinBtn.disabled = false;
+
+            // 计算指针指到的奖品索引
+            // 注意：CSS 的旋转方向是顺时针，所以我们需要用 360 减去随机度数
+            const actualDeg = (360 - (randomDeg % 360)) % 360;
+            const prizeIndex = Math.floor(actualDeg / (360 / numPrizes));
+            const winner = prizes[prizeIndex];
+
+            // 4. 显示结果
+            if (winner.text.includes("感谢") || winner.text.includes("谢谢")) {
+                resultText.innerHTML = `哎呀，手气一般：${winner.text}`;
+                resultText.className = "fail";
+            } else {
+                resultText.innerHTML = `🎉 恭喜获得：${winner.text} ！`;
+                resultText.className = "win";
+            }
+
+            // ⚠️ 关键安全警示：
+            // 这个页面是纯前端展示，不具备防篡改能力。
+            // 真实运营中，点击“参加活动”按钮后，应该由 AS3 源码向后端
+            // 发送另一个接口（比如 api.active.drawRoll）去真实扣除次数和计算奖品。
+            console.warn("[运营警示] 这是一个演示页面，点击产生的结果不具备后端真实性！真实领奖请通过游戏内协议实现。");
+
+        }, 4000); // 必须和 CSS 的 transition 4s 保持一致
+    });
+
+    // 初始化绘制
+    drawWheel();
+
+</script>
+</body>
+</html>

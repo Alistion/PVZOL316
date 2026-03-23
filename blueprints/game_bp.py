@@ -173,6 +173,13 @@ def handle_game_requests(current_user, path=""):
 # ── 路由定义 ──────────────────────────────────────────────────────────────────
 
 
+@game_bp.route("/activity/spin_win")
+def serve_spin_win_activity():
+    """
+    提供活动大转盘网页
+    """
+    return render_template("activity_spin.html")
+
 @game_bp.route("/game")
 def game():
     username = session.get("username")

@@ -83,10 +83,11 @@ def _do_openbox(user, body):
 #   - 逻辑复杂（多步骤）     → 单独定义函数，此处只填函数名
 #
 _AMF_ROUTES: dict = {
-    # ── 活跃 / 签到 ──────────────────────────────────────────────────────────
+    # ── 活动/ 活跃 / 签到 ──────────────────────────────────────────────────────────
     "api.active.getSignInfo": lambda u, b: ActiveService.get_sign_info(u),
     "api.active.sign": _do_sign,
     "api.active.getState": lambda u, b: 1,
+
     # ── 商城 ──────────────────────────────────────────────────────────────────
     "api.shop.init": lambda u, b: ShopService.get_shop_init(),
     "api.shop.getMerchandises": _do_merchandises,
@@ -111,9 +112,18 @@ _AMF_ROUTES: dict = {
     "api.apiorganism.qualityUp":lambda u, b: OrganismService.quality_up(
         u,b
     ),
+    
+    "api.apiorganism.quality12Up": lambda u, b: OrganismService.quality12_up(
+        u, b
+    ),
     "api.tool.synthesis": lambda u, b: OrganismService.synthesis(
         u, b
     ),
+    "api.apiorganism.strengthen": lambda u, b: OrganismService.strengthen(
+        u, b
+    ),
+
+
     # ── 任务 / 邮件 ───────────────────────────────────────────────────────────
     "api.duty.getAll": lambda u, b: DutyService.get_all_duties(u),
     "api.duty.getDuty": lambda u, b: None,
@@ -128,6 +138,10 @@ _AMF_ROUTES: dict = {
     # ── 斗技场 ────────────────────────────────────────────────────────────────
     "api.arena.getArenaList": lambda u, b: ArenaService.get_arena_list(u),
     "api.arena.setOrganism": lambda u, b: ArenaService.set_organism(u, b),
+
+    # ── 活动 ───────────────────────────────────────────────────────────
+    #TODO 暂时无法跳转
+    "api.banner.get": lambda u, b: ActiveService.get_banner(u, b),
 }
 
 
@@ -162,13 +176,11 @@ _UNIMPLEMENTED: set = {
     "api.fuben.award",
     # 植物强化 / 合成
     "api.apiorganism.matureRecompute",
-    "api.apiorganism.quality12Up",
     "api.apiorganism.skillLearn",
     "api.apiorganism.skillUp",
     "api.apiorganism.activities",
     "api.apiorganism.upgradeTalent",
     "api.apiorganism.restTalent",
-    "api.apiorganism.strengthen",
     "api.apiorganism.specSkillUp",
     "api.apiorganism.getAllExchangeInfo",
     "api.apiorganism.getOneExchangeInfo",

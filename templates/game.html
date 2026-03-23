@@ -35,6 +35,17 @@
                     });
             }
         }
+        // ================= 新增：接应 Flash 里的 JSManager.goToActivity =================
+        function goToActivity(url) {
+            console.log("Flash 请求打开活动网页:", url);
+            alert("即将前往活动页面：\n" + url);
+            if (url) {
+                // 在新标签页打开抽奖转盘
+                window.location.href = url;
+            } else {
+                alert("活动链接无效！");
+            }
+        }
     </script>
 </head>
 <body>
