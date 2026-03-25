@@ -122,6 +122,12 @@ _AMF_ROUTES: dict = {
     "api.apiorganism.strengthen": lambda u, b: OrganismService.strengthen(
         u, b
     ),
+    "api.apiorganism.skillLearn": lambda u, b: OrganismService.skill_learn(
+        u, b
+    ),
+    "api.apiorganism.skillUp": lambda u, b: OrganismService.skill_up(
+        u, b
+    ),
 
 
     # ── 任务 / 邮件 ───────────────────────────────────────────────────────────
@@ -176,8 +182,6 @@ _UNIMPLEMENTED: set = {
     "api.fuben.award",
     # 植物强化 / 合成
     "api.apiorganism.matureRecompute",
-    "api.apiorganism.skillLearn",
-    "api.apiorganism.skillUp",
     "api.apiorganism.activities",
     "api.apiorganism.upgradeTalent",
     "api.apiorganism.restTalent",

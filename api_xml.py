@@ -58,10 +58,12 @@ def build_warehouse_xml(username):
         try:
             d = json.loads(o["data"])
             ta, sa = d.get("tal_add", {}), d.get("soul_add", {})
+            skill_list = d.get("skills", d.get("sk", []))
             sk_xml = "".join(
                 [
-                    f'<item id="{s["id"]}" ba="{s.get("ba", 0)}" oa="{s.get("oa", 0)}" na="{s["na"]}" gr="{s["gr"]}" />'
-                    for s in d.get("sk", [])
+                    # 强行翻译：把我们的 'name' 映射给 'na'，'grade' 映射给 'gr'
+                    f'<item id="{s.get("id", "")}" ba="{s.get("ba", 0)}" oa="{s.get("oa", 0)}" na="{s.get("name", s.get("na", ""))}" gr="{s.get("grade", s.get("gr", 1))}" />'
+                    for s in skill_list
                 ]
             )
             ssk_xml = "".join(
