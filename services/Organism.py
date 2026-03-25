@@ -17,14 +17,47 @@ from dal import (
 
 # ================= 技能数据内存缓存 =================
 # 在这里手动配置：【技能书道具ID】 -> 【初次学习的技能ID】
-_MANUAL_LEARN_MAP = {
-    66: "2000",   # 假设 66 号道具（烈火书）用来学习 ID 为 2000 的技能（烈焰 lv1）
-    63: "1898",   # 举例：63 号道具学习 2005 技能
-    # 在这里继续添加你游戏里所有的技能书对应关系...
+_MANUAL_NORMAL_LEARN_MAP = {
+    66: "2000",   # 道具: 66 ->技能id 2000
+    63: "1898",   # 道具: 63 -> 技能id1898
+    # ...
+}
+
+_MANUAL_SPEC_LEARN_MAP = {
+    1113: "100",  # 道具: 1113 ->技能id 100
+    
 }
 
 # ================= 2. 内存缓存库 =================
 _SKILL_ID_MAP = None  # 建立以【技能 ID】为 Key 的索引
+
+_SPEC_SKILL_ID_MAP = None
+_SKILL_LEARN_TOOL_MAP = None
+_SPEC_SKILL_LEARN_TOOL_MAP = None
+
+
+def _load_skill_map(json_path):
+    from api_amf import _load_json_file
+
+    skill_map = {}
+    skills_data = _load_json_file(json_path)
+    iterable = skills_data if isinstance(skills_data, list) else skills_data.values()
+    for skill in iterable:
+        s_id = str(skill.get("id"))
+        if s_id:
+            skill_map[s_id] = skill
+    return skill_map
+
+
+def _build_learn_tool_map(skill_map):
+    learn_tool_map = {}
+    for skill in skill_map.values():
+        learn_tool = str(skill.get("learn_tool", ""))
+        grade = str(skill.get("grade", ""))
+        if learn_tool and grade == "1" and learn_tool not in learn_tool_map:
+            learn_tool_map[learn_tool] = skill
+    return learn_tool_map
+
 
 def _get_skill_by_tool(tool_id):
     """
@@ -34,18 +67,10 @@ def _get_skill_by_tool(tool_id):
     
     # 第一步：把所有技能按 ID 装进内存字典 (只执行一次)
     if _SKILL_ID_MAP is None:
-        _SKILL_ID_MAP = {}
-        from api_amf import _load_json_file
-        skills_data = _load_json_file("skills.json") 
-        
-        iterable = skills_data if isinstance(skills_data, list) else skills_data.values()
-        for skill in iterable:
-            s_id = str(skill.get("id"))
-            if s_id:
-                _SKILL_ID_MAP[s_id] = skill
+        _SKILL_ID_MAP = _load_skill_map("skills.json")
                 
     # 第二步：根据玩家放进来的书 (tool_id)，去你的配置表里找对应的 技能ID
-    target_skill_id = _MANUAL_LEARN_MAP.get(int(tool_id))
+    target_skill_id = _MANUAL_NORMAL_LEARN_MAP.get(int(tool_id))
     
     # 如果这本“书”没在你的配置表里，说明它可能不是初学技能书
     if not target_skill_id:
@@ -53,6 +78,76 @@ def _get_skill_by_tool(tool_id):
         
     # 第三步：拿着技能ID，去缓存里瞬间秒查完整的名字、描述、等级，并返回！
     return _SKILL_ID_MAP.get(str(target_skill_id))
+
+
+def _get_manual_skill_config(tool_id):
+    global _SKILL_ID_MAP
+
+    normal_skill_id = _MANUAL_NORMAL_LEARN_MAP.get(int(tool_id))
+    spec_skill_id = _MANUAL_SPEC_LEARN_MAP.get(int(tool_id))
+
+    if _SKILL_ID_MAP is None:
+        _SKILL_ID_MAP = _load_skill_map("skills.json")
+
+    if normal_skill_id:
+        normal_skill = _SKILL_ID_MAP.get(str(normal_skill_id))
+        if normal_skill:
+            return "skills", normal_skill
+
+    if spec_skill_id:
+        spec_skill = _get_spec_skill_map().get(str(spec_skill_id))
+        if spec_skill:
+            return "ssk", spec_skill
+
+    return None, None
+
+def _get_spec_skill_map():
+    global _SPEC_SKILL_ID_MAP
+
+    if _SPEC_SKILL_ID_MAP is None:
+        _SPEC_SKILL_ID_MAP = _load_skill_map("spec_skills.json")
+
+    return _SPEC_SKILL_ID_MAP
+
+
+def _get_learn_skill_config(tool_id):
+    global _SKILL_ID_MAP, _SKILL_LEARN_TOOL_MAP, _SPEC_SKILL_LEARN_TOOL_MAP
+
+    target_field, manual_skill = _get_manual_skill_config(tool_id)
+    if manual_skill:
+        return target_field, manual_skill
+
+    if _SKILL_ID_MAP is None:
+        _SKILL_ID_MAP = _load_skill_map("skills.json")
+    if _SKILL_LEARN_TOOL_MAP is None:
+        _SKILL_LEARN_TOOL_MAP = _build_learn_tool_map(_SKILL_ID_MAP)
+
+    normal_skill = _SKILL_LEARN_TOOL_MAP.get(str(tool_id))
+    if normal_skill:
+        return "skills", normal_skill
+
+    spec_skill_map = _get_spec_skill_map()
+    if _SPEC_SKILL_LEARN_TOOL_MAP is None:
+        _SPEC_SKILL_LEARN_TOOL_MAP = _build_learn_tool_map(spec_skill_map)
+
+    spec_skill = _SPEC_SKILL_LEARN_TOOL_MAP.get(str(tool_id))
+    if spec_skill:
+        return "ssk", spec_skill
+
+    return None, None
+
+
+def _get_skill_touch_off(skill_entry):
+    touch_off = skill_entry.get("touch_off")
+    if touch_off in (None, ""):
+        skill_config = _SKILL_ID_MAP.get(str(skill_entry.get("id", ""))) if _SKILL_ID_MAP else None
+        if skill_config:
+            touch_off = skill_config.get("touch_off")
+
+    try:
+        return int(touch_off)
+    except (TypeError, ValueError):
+        return 0
 
 # ================= 品质升级路线配置表 =================
 # 格式: "当前品质": {"next": "下一阶品质", "tool_id": 需要消耗的品质书道具ID}
@@ -76,7 +171,6 @@ _QUALITY_UPGRADE_MAP = {
     "太上": {"next": "混沌", "tool_id": 1063},
     "混沌": {"next": "无极", "tool_id": 1065},
 
-    
 }
 
 # ── 进化路线映射表（启动时从 organism.xml 解析，全量缓存）────────────────────
@@ -233,7 +327,6 @@ class OrganismService:
 
         # 变更形态并保存
         org_data["orderId"] = real_target_orid
-        update_organism_data(username, org_db_id, org_data)
 
         logger.info(
             f"[合成屋] {username} 植物 {org_db_id} 成功进化为 orid:{real_target_orid}"
@@ -560,9 +653,9 @@ class OrganismService:
     @staticmethod
     def skill_learn(username, req_body):
         logger.info(f"[技能系统] 收到 {username} 的学习技能请求，原始参数: {req_body}")
-        
+
         args = req_body[0] if len(req_body) == 1 and isinstance(req_body[0], list) else req_body
-        
+
         try:
             if len(args) >= 3:
                 action_type = int(args[0])
@@ -579,54 +672,102 @@ class OrganismService:
         if not org_data:
             return None
 
-        # 1. 自动去 JSON 里查这本技能书能学什么技能！
-        skill_config = _get_skill_by_tool(tool_id)
-        
+        target_field, skill_config = _get_learn_skill_config(tool_id)
         if not skill_config:
-            logger.warning(f"[技能系统] 找不到道具 ID {tool_id} 对应的技能配置，请检查 skills.json！")
+            logger.warning(f"[技能系统] 找不到道具 ID {tool_id} 对应的技能配置，请检查 skills.json / spec_skills.json！")
             return {"status": "error"}
 
-        # 2. 扣除对应的技能书道具
         if not consume_tool(username, tool_id, amount=1):
             logger.warning(f"[技能系统] 学习失败，技能书 {tool_id} 数量不足！")
             return {"status": "error"}
 
-        # 3. 将新技能加入植物的数据中
+        if target_field == "ssk":
+            if "ssk" not in org_data or not isinstance(org_data["ssk"], list):
+                org_data["ssk"] = []
+
+            new_skill = {
+                "id": str(skill_config.get("id", "")),
+                "name": str(skill_config.get("name", "")),
+                "grade": str(skill_config.get("grade", "1")),
+                "type": str(skill_config.get("type", "")),
+                "touch_off": str(skill_config.get("touch_off", "0"))
+            }
+
+            same_type_idx = None
+            for idx, old_skill in enumerate(org_data["ssk"]):
+                if str(old_skill.get("type", "")) == new_skill["type"]:
+                    same_type_idx = idx
+                    break
+
+            if same_type_idx is not None:
+                old_skill = org_data["ssk"][same_type_idx]
+                org_data["ssk"][same_type_idx] = new_skill
+                logger.info(
+                    f"[专属技能系统] {username} 植物专属技能覆盖成功! "
+                    f"[type={new_skill['type']}] {old_skill.get('name', '')} -> {new_skill['name']} lv{new_skill['grade']}"
+                )
+            else:
+                org_data["ssk"].append(new_skill)
+                logger.info(f"[专属技能系统] {username} 植物学习专属技能成功! 获得技能: {new_skill['name']} lv{new_skill['grade']}")
+
+            update_organism_data(username, org_db_id, org_data)
+            return OrganismService.build_organism_amf_obj(org_db_id, org_data)
+
         if "skills" not in org_data or not isinstance(org_data["skills"], list):
             org_data["skills"] = []
-            
-        # ⚡ 核心：直接把 JSON 里的核心展示字段提取出来，塞给植物
+
         new_skill = {
             "id": str(skill_config.get("id", "")),
             "name": str(skill_config.get("name", "")),
             "grade": str(skill_config.get("grade", "1")),
             "group": str(skill_config.get("group", "")),
-            "describe": str(skill_config.get("describe", ""))
+            "describe": str(skill_config.get("describe", "")),
+            "touch_off": str(skill_config.get("touch_off", "0"))
         }
-        
-        # 同一类技能按 group 覆盖旧技能；没有同类技能时再新增
+
         skill_group = new_skill["group"]
-        replaced = False
+        new_touch_off = int(skill_config.get("touch_off", 0))
+        same_group_idx = None
+        same_touch_off_indices = []
+
         for idx, old_skill in enumerate(org_data["skills"]):
             if str(old_skill.get("group", "")) == skill_group:
-                org_data["skills"][idx] = new_skill
-                replaced = True
-                logger.info(
-                    f"[技能系统] {username} 植物技能覆盖成功! "
-                    f"[{skill_group}] {old_skill.get('name', '')} -> {new_skill['name']} lv{new_skill['grade']}"
-                )
-                break
+                same_group_idx = idx
+            if _get_skill_touch_off(old_skill) == new_touch_off:
+                same_touch_off_indices.append(idx)
 
-        if not replaced:
+        if same_group_idx is not None:
+            old_skill = org_data["skills"][same_group_idx]
+            org_data["skills"][same_group_idx] = new_skill
+            logger.info(
+                f"[技能系统] {username} 植物技能覆盖成功! "
+                f"[{skill_group}] {old_skill.get('name', '')} -> {new_skill['name']} lv{new_skill['grade']}"
+            )
+        elif new_touch_off == 2:
+            if same_touch_off_indices:
+                old_idx = same_touch_off_indices[0]
+                old_skill = org_data["skills"][old_idx]
+                org_data["skills"][old_idx] = new_skill
+                logger.info(
+                    f"[技能系统] {username} 植物单槽技能覆盖成功! "
+                    f"{old_skill.get('name', '')} -> {new_skill['name']} lv{new_skill['grade']}"
+                )
+            else:
+                org_data["skills"].append(new_skill)
+                logger.info(f"[技能系统] {username} 植物学习单槽技能成功! 获得技能: {new_skill['name']} lv{new_skill['grade']}")
+        elif new_touch_off == 1:
+            if len(same_touch_off_indices) >= 3:
+                logger.warning(f"[技能系统] {username} 植物学习失败，touch_off=1 的技能已达到 3 个上限")
+                return {"status": "error"}
+            org_data["skills"].append(new_skill)
+            logger.info(f"[技能系统] {username} 植物学习多槽技能成功! 获得技能: {new_skill['name']} lv{new_skill['grade']}")
+        else:
             org_data["skills"].append(new_skill)
             logger.info(f"[技能系统] {username} 植物自动学习成功! 获得技能: {new_skill['name']} lv{new_skill['grade']}")
 
-        # 4. 保存回数据库
         update_organism_data(username, org_db_id, org_data)
-
-        # 5. 打包返回
         return OrganismService.build_organism_amf_obj(org_db_id, org_data)
-    
+
     @staticmethod
     def skill_up(username, req_body):
         """
@@ -657,14 +798,7 @@ class OrganismService:
         global _SKILL_ID_MAP
         if not _SKILL_ID_MAP:
             # 防御性代码：万一服务器刚启动还没人学过技能，手动触发一次缓存加载
-            from api_amf import _load_json_file
-            _SKILL_ID_MAP = {}
-            skills_data = _load_json_file("skills.json") 
-            iterable = skills_data if isinstance(skills_data, list) else skills_data.values()
-            for skill in iterable:
-                s_id = str(skill.get("id"))
-                if s_id:
-                    _SKILL_ID_MAP[s_id] = skill
+            _SKILL_ID_MAP = _load_skill_map("skills.json")
 
         # 2. 从缓存里找出当前的技能配置
         current_skill_config = _SKILL_ID_MAP.get(prev_skill_id)
@@ -703,7 +837,8 @@ class OrganismService:
                         "name": str(next_skill_config.get("name", "")),
                         "grade": str(next_skill_config.get("grade", "1")),
                         "group": str(next_skill_config.get("group", "")),
-                        "describe": str(next_skill_config.get("describe", ""))
+                        "describe": str(next_skill_config.get("describe", "")),
+                        "touch_off": str(next_skill_config.get("touch_off", "0"))
                     }
                     break
 
@@ -712,6 +847,80 @@ class OrganismService:
         logger.info(f"[技能系统] {username} 植物技能升级成功！ {prev_skill_id} -> {next_skill_id}")
 
         # 9. 【极简且特定的返回】：前端的回包逻辑只认 now_id 和 prev_id！
+        return {
+            "prev_id": prev_skill_id,
+            "now_id": next_skill_id
+        }
+
+    @staticmethod
+    def spec_skill_up(username, req_body):
+        """
+        处理植物专属技能升级请求 (api.apiorganism.specSkillUp)
+        """
+        logger.info(f"[专属技能系统] 收到 {username} 的专属技能升级请求，原始参数: {req_body}")
+
+        args = req_body[0] if len(req_body) == 1 and isinstance(req_body[0], list) else req_body
+
+        try:
+            if len(args) >= 3:
+                action_type = int(args[0])
+                org_db_id = int(args[1])
+                prev_skill_id = str(args[2])
+            else:
+                org_db_id = int(args[0])
+                prev_skill_id = str(args[1])
+        except Exception as e:
+            logger.error(f"[专属技能系统] 参数解析失败: {e}")
+            return None
+
+        org_data = get_organism_by_id(username, org_db_id)
+        if not org_data:
+            return None
+
+        spec_skill_map = _get_spec_skill_map()
+        current_skill_config = spec_skill_map.get(prev_skill_id)
+        if not current_skill_config:
+            logger.warning(f"[专属技能系统] 找不到当前专属技能 {prev_skill_id} 的配置！")
+            return {"now_id": prev_skill_id, "prev_id": prev_skill_id}
+
+        next_skill_id = str(current_skill_config.get("next_grade_id", ""))
+        required_tool_id = int(current_skill_config.get("learn_tool", 0))
+
+        if not next_skill_id or next_skill_id == "0":
+            logger.warning(f"[专属技能系统] 专属技能 {prev_skill_id} 已经满级，无法继续升级！")
+            return {"now_id": prev_skill_id, "prev_id": prev_skill_id}
+
+        if required_tool_id > 0 and not consume_tool(username, required_tool_id, amount=1):
+            logger.warning(f"[专属技能系统] 升级失败，缺少所需的材料书 ID: {required_tool_id}")
+            return {"now_id": prev_skill_id, "prev_id": prev_skill_id}
+
+        next_skill_config = spec_skill_map.get(next_skill_id)
+        if not next_skill_config:
+            logger.error(f"[专属技能系统] 找不到下一级专属技能 {next_skill_id} 的配置，请检查 spec_skills.json！")
+            return {"now_id": prev_skill_id, "prev_id": prev_skill_id}
+
+        if "ssk" not in org_data or not isinstance(org_data["ssk"], list):
+            org_data["ssk"] = []
+
+        replaced = False
+        for idx, skill in enumerate(org_data["ssk"]):
+            if str(skill.get("id")) == prev_skill_id:
+                org_data["ssk"][idx] = {
+                    "id": next_skill_id,
+                    "name": str(next_skill_config.get("name", "")),
+                    "grade": str(next_skill_config.get("grade", "1")),
+                    "type": str(next_skill_config.get("type", "")),
+                }
+                replaced = True
+                break
+
+        if not replaced:
+            logger.warning(f"[专属技能系统] 植物 {org_db_id} 未找到待升级的专属技能 {prev_skill_id}")
+            return {"now_id": prev_skill_id, "prev_id": prev_skill_id}
+
+        update_organism_data(username, org_db_id, org_data)
+        logger.info(f"[专属技能系统] {username} 植物专属技能升级成功！ {prev_skill_id} -> {next_skill_id}")
+
         return {
             "prev_id": prev_skill_id,
             "now_id": next_skill_id

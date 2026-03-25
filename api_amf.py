@@ -128,6 +128,9 @@ _AMF_ROUTES: dict = {
     "api.apiorganism.skillUp": lambda u, b: OrganismService.skill_up(
         u, b
     ),
+    "api.apiorganism.specSkillUp": lambda u, b: OrganismService.spec_skill_up(
+        u, b
+    ),
 
 
     # ── 任务 / 邮件 ───────────────────────────────────────────────────────────
@@ -185,7 +188,6 @@ _UNIMPLEMENTED: set = {
     "api.apiorganism.activities",
     "api.apiorganism.upgradeTalent",
     "api.apiorganism.restTalent",
-    "api.apiorganism.specSkillUp",
     "api.apiorganism.getAllExchangeInfo",
     "api.apiorganism.getOneExchangeInfo",
     "api.apiorganism.exchangeOne",
