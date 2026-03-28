@@ -131,6 +131,9 @@ _AMF_ROUTES: dict = {
     "api.apiorganism.specSkillUp": lambda u, b: OrganismService.spec_skill_up(
         u, b
     ),
+    "api.apiorganism.matureRecompute": lambda u, b: OrganismService.mature_recompute(
+        u, b
+    ),
 
 
     # ── 任务 / 邮件 ───────────────────────────────────────────────────────────
@@ -184,7 +187,6 @@ _UNIMPLEMENTED: set = {
     "api.fuben.reward",
     "api.fuben.award",
     # 植物强化 / 合成
-    "api.apiorganism.matureRecompute",
     "api.apiorganism.activities",
     "api.apiorganism.upgradeTalent",
     "api.apiorganism.restTalent",
@@ -239,12 +241,11 @@ _UNIMPLEMENTED: set = {
     "api.active.challenge",
     "api.active.addCount",
     "api.active.getCopy",
-    "api.banner.get",
     "api.gift.get",
     # 摇钱树打僵尸
     "api.zombie.beat",
     "api.zombie.addcount",
-    # 魔法石副本进阶
+    # 宝石副本进阶
     "api.stone.getCaveInfo",
     "api.stone.getRewardInfo",
     "api.stone.reward",

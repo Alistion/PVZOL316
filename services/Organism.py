@@ -1,5 +1,7 @@
 # services/Organism.py
 import os
+import random
+import re
 import xml.etree.ElementTree as ET
 
 from config import logger
@@ -176,6 +178,7 @@ _QUALITY_UPGRADE_MAP = {
 # ── 进化路线映射表（启动时从 organism.xml 解析，全量缓存）────────────────────
 # 结构：{ route_id (int): {"target": int, "money": int, "tools": [(tool_id, amount)]} }
 _EVOLUTION_ROUTES: dict[int, dict] = {}
+_GROWTH_RANGE_MAP: dict[int, tuple[int, int]] = {}
 
 
 def _load_evolution_routes() -> dict[int, dict]:
@@ -224,14 +227,107 @@ def _load_evolution_routes() -> dict[int, dict]:
     return routes
 
 
+def _parse_growth_range(expl_text):
+    if not expl_text:
+        return None
+
+    match = re.search(r"成长值范围：(\d+)(?:到(\d+))?", str(expl_text))
+    if not match:
+        return None
+
+    low = int(match.group(1))
+    high = int(match.group(2) or low)
+    return (low, high)
+
+
+def _load_growth_ranges() -> dict[int, tuple[int, int]]:
+    growth_ranges: dict[int, tuple[int, int]] = {}
+    xml_path = os.path.join("cache", "pvz", "php_xml", "organism.xml")
+
+    try:
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+
+        for org_item in root.findall(".//organisms/item"):
+            try:
+                order_id = int(org_item.get("id", 0))
+            except (TypeError, ValueError):
+                continue
+
+            growth_range = _parse_growth_range(org_item.get("expl"))
+            if order_id and growth_range:
+                growth_ranges[order_id] = growth_range
+
+        logger.info(f"[植物系统] 已从 organism.xml 加载 {len(growth_ranges)} 条成长区间配置")
+    except FileNotFoundError:
+        logger.error(f"[植物系统] 找不到成长配置文件: {xml_path}")
+    except ET.ParseError as e:
+        logger.error(f"[植物系统] organism.xml 成长区间解析失败: {e}")
+
+    return growth_ranges
+
+
 # 模块加载时执行一次，之后直接查表，无需重复 IO
 _EVOLUTION_ROUTES = _load_evolution_routes()
+_GROWTH_RANGE_MAP = _load_growth_ranges()
 
 
 class OrganismService:
     @staticmethod
     def get_evolution_cost(username, req_body):
         return 0
+
+    @staticmethod
+    def _pick_org_id_from_args(username, args):
+        int_candidates = []
+        for value in args:
+            try:
+                int_candidates.append(int(value))
+            except (TypeError, ValueError):
+                continue
+
+        for candidate in reversed(int_candidates):
+            if get_organism_by_id(username, candidate):
+                return candidate
+
+        return int_candidates[-1] if int_candidates else None
+
+    @staticmethod
+    def _calc_growth_value(org_data):
+        raw_value = org_data.get("ma", org_data.get("pullulation", 0))
+        try:
+            return max(1, int(raw_value))
+        except (TypeError, ValueError):
+            return 1
+
+    @staticmethod
+    def _apply_growth_ratio(org_data, old_growth, new_growth):
+        if old_growth <= 0 or new_growth <= 0 or old_growth == new_growth:
+            return
+
+        ratio = new_growth / old_growth
+        scaled_attrs = [
+            "hp_max",
+            "hp",
+            "attack",
+            "precision",
+            "new_precision",
+            "miss",
+            "new_miss",
+            "speed",
+        ]
+
+        for attr in scaled_attrs:
+            try:
+                current_value = int(org_data.get(attr, 0))
+            except (TypeError, ValueError):
+                continue
+            org_data[attr] = max(1, int(round(current_value * ratio)))
+
+        org_data["fighting"] = max(
+            1,
+            int(org_data.get("attack", 0)) * 2 + int(org_data.get("hp_max", 0)) // 5,
+        )
     
     @classmethod
     def build_organism_amf_obj(cls, org_db_id, org_data):
@@ -271,6 +367,57 @@ class OrganismService:
             "new_syn_miss": "0",
             "sa": "0", "sh": "0", "sm": "0", "ss": "0", "gi": "0", "spr": "0"
         }
+
+    @staticmethod
+    def mature_recompute(username, req_body):
+        """
+        处理成长刷新请求 (api.apiorganism.matureRecompute)
+        客户端通常只上传 [action, org_id] 或 [org_id]。
+        """
+        logger.info(f"[植物系统] 收到 {username} 的成长刷新请求，原始参数: {req_body}")
+
+        args = req_body[0] if len(req_body) == 1 and isinstance(req_body[0], list) else req_body
+        org_db_id = OrganismService._pick_org_id_from_args(username, args)
+        if org_db_id is None:
+            logger.warning(f"[植物系统] 成长刷新失败：无法从参数中解析植物 ID，req_body={req_body}")
+            return None
+
+        org_data = get_organism_by_id(username, org_db_id)
+        if not org_data:
+            logger.warning(f"[植物系统] 成长刷新失败：找不到植物 ID {org_db_id}")
+            return None
+
+        GROWTH_REFRESH_TOOL_ID = 17
+        if not consume_tool(username, GROWTH_REFRESH_TOOL_ID, amount=1):
+            logger.warning(f"[植物系统] 成长刷新失败：道具 {GROWTH_REFRESH_TOOL_ID} 数量不足")
+            return {"status": "error"}
+
+        order_id = int(org_data.get("orderId", 0))
+        growth_range = _GROWTH_RANGE_MAP.get(order_id)
+        if growth_range:
+            new_growth = random.randint(growth_range[0], growth_range[1])
+        else:
+            current_growth = OrganismService._calc_growth_value(org_data)
+            low = max(1, current_growth - max(1, current_growth // 10))
+            high = max(low, current_growth + max(1, current_growth // 10))
+            new_growth = random.randint(low, high)
+            logger.warning(
+                f"[植物系统] 植物 {org_db_id} 未找到成长区间配置，使用回退区间 {low}-{high}"
+            )
+
+        old_growth = OrganismService._calc_growth_value(org_data)
+        org_data["ma"] = new_growth
+        org_data["pullulation"] = new_growth
+        OrganismService._apply_growth_ratio(org_data, old_growth, new_growth)
+
+        if int(org_data.get("hp", 0)) > int(org_data.get("hp_max", 0)):
+            org_data["hp"] = org_data["hp_max"]
+
+        update_organism_data(username, org_db_id, org_data)
+        logger.info(
+            f"[植物系统] {username} 成长刷新成功，植物 {org_db_id}: {old_growth} -> {new_growth}"
+        )
+        return OrganismService.build_organism_amf_obj(org_db_id, org_data)
 
     @staticmethod
     def execute_evolution(username, org_db_id, route_id):
